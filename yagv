@@ -1,0 +1,279 @@
+#!/usr/bin/env python
+
+import pyglet
+from pyglet import clock
+from pyglet.gl import *
+from pyglet.window import key
+from pyglet.window import mouse
+
+from parser import *
+
+
+
+class App:
+	def __init__(self):
+		self.RX = 0.0
+		self.RZ = 0.0
+		self.zoom = 1.0
+	
+	def run(self):
+		path = "stand_fixed.gcode"
+		path = "container_fixed.gcode"
+		path = "plate_fixed.gcode"
+		path = "plate_fixed_.15-.45.gcode"
+		path = "test.gcode"
+
+		print
+		print "Parsing '%s'..."%path
+		print
+
+		self.parser = GcodeParser()
+		self.model = self.parser.parseFile(path)
+
+		print
+		print "Done! %s"%self.model
+		print
+
+		#self.render()
+
+		self.layerIdx = 0
+		
+		return self
+		
+	def render(self, width=None, height=None):
+		
+		self.graphics = []
+		
+		for layer in self.model.layers:
+			
+			#vertex_list = pyglet.graphics.vertex_list(2,
+			#	('v3f', (10, 15, 30, 35)),
+			#	('c3B', (0, 0, 255, 0, 255, 0))
+			#)
+			vertices = []
+			#colors = []
+			
+			x = layer.start["X"]
+			y = layer.start["Y"]
+			z = layer.start["Z"]
+			for seg in layer.segments:
+				vertices.append(x)
+				vertices.append(y)
+				vertices.append(z)
+				x = seg.coords["X"]
+				y = seg.coords["Y"]
+				z = seg.coords["Z"]
+				vertices.append(x)
+				vertices.append(y)
+				vertices.append(z)
+
+			vertex_list = pyglet.graphics.vertex_list(len(vertices)/3,
+				('v3f/static', vertices)
+				#('c3B', (0, 0, 255, 0, 255, 0))
+			)
+			
+			self.graphics.append(vertex_list)
+			
+app = App().run()
+app.dy = None
+
+
+
+window = pyglet.window.Window(None, None, "Yet Another GCode Viewing Program", True)
+
+#window.push_handlers(pyglet.window.event.WindowEventLogger())
+
+text = [	"Right-click & drag to change layer",
+			"Scroll to zoom",
+			"Left-click & drag to rotate view"]
+			
+labels = []
+txtY = 5
+for t in text:
+	labels.append(
+		pyglet.text.Label(	t,
+							font_size=12,
+							x=5, y=txtY) )
+	txtY += 20
+	
+	
+app.render(window.width, window.height)
+
+@window.event
+def on_resize(width, height):
+	glViewport(0, 0, width, height)
+	glMatrixMode(GL_PROJECTION)
+	glLoadIdentity()
+	gluPerspective(65, width / float(height), .1, 1000)
+	glMatrixMode(GL_MODELVIEW)
+	app.render(width, height)
+
+	return pyglet.event.EVENT_HANDLED
+
+@window.event
+def on_mouse_press(x, y, button, modifiers):
+	#print "on_mouse_press(x=%d, y=%d, button=%s, modifiers=%s)"%(x, y, button, modifiers)
+	if button & mouse.LEFT:
+		on_start_rotate_drag(x, y, button, modifiers)
+		
+	if button & mouse.RIGHT:
+		on_start_layer_drag(x, y, button, modifiers)
+		
+@window.event
+def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
+	#print "on_mouse_drag(x=%d, y=%d, dx=%d, dy=%d, buttons=%s, modifiers=%s)"%(x, y, dx, dy, buttons, modifiers)
+	if buttons & mouse.LEFT:
+		on_do_rotate_drag(x, y, dx, dy, buttons, modifiers)
+		
+	if buttons & mouse.RIGHT:
+		on_do_layer_drag(x, y, dx, dy, buttons, modifiers)
+	
+@window.event
+def on_mouse_release(x, y, button, modifiers):
+	#print "on_mouse_release(x=%d, y=%d, button=%s, modifiers=%s)"%(x, y, button, modifiers)
+	if button & mouse.LEFT:
+		on_end_rotate_drag(x, y, button, modifiers)
+		
+	if button & mouse.RIGHT:
+		on_end_layer_drag(x, y, button, modifiers)
+	
+	
+	
+	
+	
+def on_start_rotate_drag(x, y, button, modifiers):
+	app.rotateDragStartRX = app.RX
+	app.rotateDragStartRZ = app.RZ
+	app.rotateDragStartX = x
+	app.rotateDragStartY = y
+	
+def on_do_rotate_drag(x, y, dx, dy, buttons, modifiers):
+	# deltas
+	deltaX = x - app.rotateDragStartX
+	deltaY = y - app.rotateDragStartY
+	# rotate!
+	app.RZ = app.rotateDragStartRZ + deltaX/5.0 # mouse X bound to model Z
+	app.RX = app.rotateDragStartRX + deltaY/5.0 # mouse Y bound to model X
+	
+def on_end_rotate_drag(x, y, button, modifiers):
+	app.rotateDragStartRX = None
+	app.rotateDragStartRZ = None
+	app.rotateDragStartX = None
+	app.rotateDragStartY = None
+	
+	
+def on_start_layer_drag(x, y, button, modifiers):
+	app.layerDragStartLayer = app.layerIdx
+	app.layerDragStartX = x
+	app.layerDragStartY = y
+	
+def on_do_layer_drag(x, y, dx, dy, buttons, modifiers):
+	# sum x & y
+	delta = x - app.layerDragStartX + y - app.layerDragStartY
+	# new theoretical layer
+	app.layerIdx = int(app.layerDragStartLayer + delta/5)
+	# clamp layer to 0-max
+	app.layerIdx = max(min(app.layerIdx, app.model.topLayer), 0)
+	
+#	# clamp layer to 0-max, with origin slip
+#	if (app.layerIdx < 0):
+#		app.layerIdx = 0
+#		app.layerDragStartLayer = 0
+#		app.layerDragStartX = x
+#		app.layerDragStartY = y
+#	if (app.layerIdx > len(app.model.layers)-1):
+#		app.layerIdx = len(app.model.layers)-1
+#		app.layerDragStartLayer = len(app.model.layers)-1
+#		app.layerDragStartX = x
+#		app.layerDragStartY = y
+	
+def on_end_layer_drag(x, y, button, modifiers):
+	app.layerDragStartLayer = None
+	app.layerDragStartX = None
+	app.layerDragStartY = None
+
+
+
+@window.event
+def on_mouse_scroll(x, y, dx, dy):
+	# zoom on mouse scroll
+	delta = dx + dy
+	z = 1.2 if delta>0 else 0.8
+	app.zoom = max(1.0, app.zoom * z)
+	
+@window.event
+def on_draw():
+
+	# Clear buffers
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+	
+	# setup projection
+	glMatrixMode(GL_PROJECTION)
+	glLoadIdentity()
+	gluPerspective(65, window.width / float(window.height), .1, 1000)
+	
+	# setup camera
+	glMatrixMode(GL_MODELVIEW)
+	glLoadIdentity()
+	gluLookAt(0,1.5,2,0,0,0,0,1,0)
+	
+	# enable alpha blending
+	glEnable(GL_BLEND)
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+	
+	# rotate axes to match reprap style
+	glRotated(-90, 1,0,0)
+	# user rotate model
+	glRotated(-app.RX, 1,0,0)
+	glRotated(app.RZ, 0,0,1)
+	
+	# draw axes
+	#TODO: color
+	glBegin(GL_LINES)
+	glColor3f(1,0,0)
+	glVertex2i(0,0); glVertex2i(1,0)
+	glColor3f(0,1,0)
+	glVertex2i(0,0); glVertex2i(0,1)
+	glColor3f(0,0,1)
+	glVertex2i(0,0); glVertex3i(0,0,1)
+	glEnd()
+	
+	# fit & user zoom model
+	scale = app.zoom / max(app.model.extents[0], app.model.extents[2], app.model.extents[5])
+	glScaled(scale, scale, scale)
+	
+	# Draw the model
+	
+	# lower layers
+	glColor4f(0.5,0.5,0.5,0.5)
+	for graphic in app.graphics[0:app.layerIdx]:
+		graphic.draw(GL_LINES)
+		
+	# highlighted layer
+	glColor4f(1,1,1,1)
+	graphic = app.graphics[app.layerIdx]
+	graphic.draw(GL_LINES)
+	
+	# limbo layers
+	glColor4f(0.5,0.5,0.5,0.1)
+	for graphic in app.graphics[app.layerIdx+1:]:
+		graphic.draw(GL_LINES)
+	
+	glDisable(GL_DEPTH_TEST)
+	glDepthMask(0)
+	
+	#Set your camera up for 2d, draw 2d scene
+	
+	glMatrixMode(GL_PROJECTION)
+	glLoadIdentity();
+	glOrtho(0, window.width, 0, window.height, -1, 1)
+	glMatrixMode(GL_MODELVIEW)
+	glLoadIdentity()
+	
+	for label in labels:
+		label.draw()
+
+	glEnable(GL_DEPTH_TEST)
+	glDepthMask(1)
+	
+pyglet.app.run()
