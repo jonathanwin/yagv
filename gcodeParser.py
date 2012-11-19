@@ -33,7 +33,7 @@ class GcodeParser:
 		# extract & clean command
 		command = bits[0].strip()
 		
-		# TODO strip logical line number (N-code)?
+		# TODO strip logical line number & checksum
 		
 		# code is fist word, then args
 		comm = command.split(None, 1)
@@ -72,7 +72,7 @@ class GcodeParser:
 	def parse_G21(self, args):
 		# G21: Set Units to Millimeters
 		# Default, nothing to do
-		None
+		pass
 		
 	def parse_G28(self, args):
 		# G28: Move to Origin
@@ -81,12 +81,12 @@ class GcodeParser:
 	def parse_G90(self, args):
 		# G90: Set to Absolute Positioning
 		# Default, nothing to do
-		None
+		pass
 		
 	def parse_G91(self, args):
 		# G91: Set to Relative Positioning
 		# unsupported
-		self.error("Unsupported & incompatible: G91: Set to Relative Positioning")
+		self.error("Not yet supported: G91: Set to Relative Positioning")
 		
 	def parse_G92(self, args):
 		# G92: Set Position
@@ -153,7 +153,7 @@ class GcodeModel:
 		
 	def do_G28(self, args):
 		# G28: Move to Origin
-		self.error("G28 todo")
+		self.warn("G28 unimplemented")
 		
 	def do_G92(self, args):
 		# G92: Set Position
@@ -363,8 +363,7 @@ class Layer:
 		
 		
 if __name__ == '__main__':
-	path = "stand_fixed.gcode"
-	path = "container_fixed.gcode"
+	path = "test.gcode"
 
 	parser = GcodeParser()
 	model = parser.parseFile(path)
