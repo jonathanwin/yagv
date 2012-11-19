@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-YAGV_VERSION = "0.2"
+YAGV_VERSION = "0.2-coloring"
 
 import pyglet
 
@@ -39,19 +39,14 @@ class App:
 		
 		return self
 		
-	def render(self):
+	def renderVertices(self):
 		
 		self.graphics = []
 		#TODO use batch = pyglet.graphics.Batch() for even more performance!
 		
 		for layer in self.model.layers:
 			
-			#vertex_list = pyglet.graphics.vertex_list(2,
-			#	('v3f', (10, 15, 30, 35)),
-			#	('c3B', (0, 0, 255, 0, 255, 0))
-			#)
 			vertices = []
-			#colors = []
 			
 			x = layer.start["X"]
 			y = layer.start["Y"]
@@ -66,14 +61,50 @@ class App:
 				vertices.append(x)
 				vertices.append(y)
 				vertices.append(z)
-
+				
+			count = len(layer.segments)
 			vertex_list = pyglet.graphics.vertex_list(len(vertices)/3,
-				('v3f/static', vertices)
-				#('c3B', (0, 0, 255, 0, 255, 0))
+				('v3f/static', vertices),
+				('c4B/dynamic', [128]*(4*2*count))
 			)
 			
 			self.graphics.append(vertex_list)
-
+			
+	def renderColors(self):
+		colormap = [
+			[	# 0: old layer
+				[255,255,255, 96],[255,  0,  0,128]], # extrude, other
+			[	# 1: current layer
+				[255,255,255,128],[255,  0,  0,255]], # extrude, other
+			[	# 2: limbo layer
+				[255,255,255, 10],[255,  0,  0, 10]] # extrude, other
+				]
+		
+		layerIdx = 0
+		for layer in self.model.layers:
+			
+			colors = []
+			
+			for seg in layer.segments:
+				
+				styleCol = 0 if (seg.style == "extrude") else 1
+				layerCol = 0
+				if (layerIdx < self.layerIdx):
+					layerCol = 0
+				if (layerIdx == self.layerIdx):
+					layerCol = 1
+				if (layerIdx > self.layerIdx):
+					layerCol = 2
+				
+				color = colormap[layerCol][styleCol]
+				colors.extend(color*2)
+				
+#			print layerIdx
+			vertex_list = self.graphics[layerIdx]
+			vertex_list.colors = colors
+			layerIdx += 1
+			
+		
 class MyWindow(pyglet.window.Window):
 
 	# events
@@ -205,6 +236,7 @@ class MyWindow(pyglet.window.Window):
 		for graphic in app.graphics[app.layerIdx+1:]:
 			graphic.draw(GL_LINES)
 		
+		
 		glDisable(GL_DEPTH_TEST)
 		glDepthMask(0)
 		
@@ -216,7 +248,6 @@ class MyWindow(pyglet.window.Window):
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
 		
-		#statsLabel.text = "%2.2ffps"%pyglet.clock.get_fps()
 		fpsLabel.text = "%d fps"%int(round(pyglet.clock.get_fps()))
 		
 		for label in blLabels:
@@ -269,6 +300,7 @@ def layer_drag_do(x, y, dx, dy, buttons, modifiers):
 	app.layerIdx = max(min(app.layerIdx, app.model.topLayer), 0)
 	
 	layerLabel.text = "layer %d"%app.layerIdx
+	app.renderColors()
 	
 #	# clamp layer to 0-max, with origin slip
 #	if (app.layerIdx < 0):
@@ -348,6 +380,8 @@ trLabels.append(layerLabel)
 window.placeLabels(window.width, window.height)
 
 # render the model
-app.render()
+app.renderVertices()
+app.layerIdx = 120
+app.renderColors()
 
 pyglet.app.run()

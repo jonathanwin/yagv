@@ -1,7 +1,7 @@
 yagv
 ====
 
-Yet Another Gcode Viewer v0.2
+Yet Another Gcode Viewer v0.2-coloring
 
 
 Yet Another Gcode Viewer is a fast Gcode Viewer for Reprap-style 3D printers.
