@@ -15,7 +15,7 @@ from pyglet.window import mouse
 
 from gcodeParser import *
 import os.path
-
+import time
 
 class App:
 	def __init__(self):
@@ -65,45 +65,93 @@ class App:
 			count = len(layer.segments)
 			vertex_list = pyglet.graphics.vertex_list(len(vertices)/3,
 				('v3f/static', vertices),
-				('c4B/dynamic', [128]*(4*2*count))
+				('c4B/dynamic', [128]*(4*2*count))	# dummy colors
 			)
 			
 			self.graphics.append(vertex_list)
 			
-	def renderColors(self):
-		colormap = [
-			[	# 0: old layer
-				[255,255,255, 96],[255,  0,  0,128]], # extrude, other
-			[	# 1: current layer
-				[255,255,255,128],[255,  0,  0,255]], # extrude, other
-			[	# 2: limbo layer
-				[255,255,255, 10],[255,  0,  0, 10]] # extrude, other
-				]
+	def renderColorIndex(self):
+		# pre-render segments to colors in the index
+		styleToColoridx = {
+			"extrude" : 0,
+			"fly" : 1,
+			"retract" : 2,
+			"restore" : 3
+			}
 		
-		layerIdx = 0
+		# all the color indexes for all layers
+		self.colorIndexes = []
+		
+		# for all layers
 		for layer in self.model.layers:
 			
-			colors = []
-			
+			# index for this layer
+			colorIndex = []
 			for seg in layer.segments:
-				
-				styleCol = 0 if (seg.style == "extrude") else 1
-				layerCol = 0
-				if (layerIdx < self.layerIdx):
-					layerCol = 0
-				if (layerIdx == self.layerIdx):
-					layerCol = 1
-				if (layerIdx > self.layerIdx):
-					layerCol = 2
-				
-				color = colormap[layerCol][styleCol]
-				colors.extend(color*2)
-				
-#			print layerIdx
-			vertex_list = self.graphics[layerIdx]
-			vertex_list.colors = colors
+				# get color index for this segment
+				styleCol = styleToColoridx[seg.style]
+				# append color twice (once per end)
+				colorIndex.extend((styleCol, styleCol))
+			
+			# append layer to all layers
+			self.colorIndexes.append(colorIndex)
+			
+			print "colorIndex length", len(colorIndex)
+	
+	def renderColors(self):
+		# render color index to real colors
+		colorMap = [
+				# 0: old layer
+				[[255,255,255, 96],[255,  0,  0, 64],[  0,  255,  0, 64],[  0,  0,  255, 64]], # extrude, fly, retract, restore
+				# 1: current layer
+				[[255,255,255,128],[255,  0,  0,128],[  0,  255,  0,128],[  0,  0,  255,128]], # extrude, fly, retract, restore
+				# 2: limbo layer
+				[[255,255,255, 10],[255,  0,  0, 10],[  0,  255,  0, 10],[  0,  0,  255, 10]] # extrude, fly, retract, restore
+				]
+		
+		colorlists = []
+		
+		t1 = time.time()
+		
+		layerIdx = 0
+		# for all preindexed layer colors
+		for layer in self.colorIndexes:
+			# choose color map for this layer
+			layerColorMap = []
+			if layerIdx < self.layerIdx:
+				layerColorMap = colorMap[0]
+			elif layerIdx == self.layerIdx:
+				layerColorMap = colorMap[1]
+			else:
+				layerColorMap = colorMap[2]
+			
+			# render color indexes to colors
+			colors = map(lambda e: layerColorMap[e], layer)
+			# flatten color values
+			fcolors = []
+			map(fcolors.extend, colors)
+			
+			# save resolved colors
+			colorlists.append(fcolors)
+			
 			layerIdx += 1
 			
+		t2 = time.time()
+		
+		layerIdx = 0
+		# for all preindexed layer colors
+		for fcolors in colorlists:
+			# push colors to vertex list
+			vertex_list = self.graphics[layerIdx]
+			vertex_list.colors = fcolors
+			
+			layerIdx += 1
+			
+		t3 = time.time()
+		
+		print "end renderColors"
+		print 'resolving took %0.3f ms' % ((t2-t1)*1000.0, )
+		print 'pushing took %0.3f ms' % ((t3-t2)*1000.0, )
 		
 class MyWindow(pyglet.window.Window):
 
@@ -180,6 +228,8 @@ class MyWindow(pyglet.window.Window):
 		app.zoom = max(1.0, app.zoom * z)
 
 	def on_draw(self):
+		#print "draw"
+		
 		# Clear buffers
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		
@@ -219,24 +269,12 @@ class MyWindow(pyglet.window.Window):
 		scale = app.zoom / max(app.model.extents[0], app.model.extents[2], app.model.extents[5])
 		glScaled(scale, scale, scale)
 		
-		# Draw the model
-		
-		# lower layers
-		glColor4f(0.5,0.5,0.5,0.5)
-		for graphic in app.graphics[0:app.layerIdx]:
-			graphic.draw(GL_LINES)
-			
-		# highlighted layer
-		glColor4f(1,1,1,1)
-		graphic = app.graphics[app.layerIdx]
-		graphic.draw(GL_LINES)
-		
-		# limbo layers
-		glColor4f(0.5,0.5,0.5,0.1)
-		for graphic in app.graphics[app.layerIdx+1:]:
+		# Draw the model layers
+		for graphic in app.graphics:
 			graphic.draw(GL_LINES)
 		
 		
+		# disable depth for HUD
 		glDisable(GL_DEPTH_TEST)
 		glDepthMask(0)
 		
@@ -258,7 +296,8 @@ class MyWindow(pyglet.window.Window):
 			label.draw()
 		for label in trLabels:
 			label.draw()
-
+		
+		# reenable depth for next model display
 		glEnable(GL_DEPTH_TEST)
 		glDepthMask(1)
 
@@ -300,6 +339,7 @@ def layer_drag_do(x, y, dx, dy, buttons, modifiers):
 	app.layerIdx = max(min(app.layerIdx, app.model.topLayer), 0)
 	
 	layerLabel.text = "layer %d"%app.layerIdx
+	#print "renderColors"
 	app.renderColors()
 	
 #	# clamp layer to 0-max, with origin slip
@@ -381,6 +421,7 @@ window.placeLabels(window.width, window.height)
 
 # render the model
 app.renderVertices()
+app.renderColorIndex()
 app.layerIdx = 120
 app.renderColors()
 
