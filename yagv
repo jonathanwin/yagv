@@ -40,37 +40,35 @@ class App:
 		return self
 		
 	def renderVertices(self):
+		t1 = time.time()
 		
-		self.graphics = []
-		#TODO use batch = pyglet.graphics.Batch() for even more performance!
+		self.vertices = []
 		
 		for layer in self.model.layers:
 			
-			vertices = []
+			layer_vertices = []
 			
 			x = layer.start["X"]
 			y = layer.start["Y"]
 			z = layer.start["Z"]
 			for seg in layer.segments:
-				vertices.append(x)
-				vertices.append(y)
-				vertices.append(z)
+				layer_vertices.append(x)
+				layer_vertices.append(y)
+				layer_vertices.append(z)
 				x = seg.coords["X"]
 				y = seg.coords["Y"]
 				z = seg.coords["Z"]
-				vertices.append(x)
-				vertices.append(y)
-				vertices.append(z)
+				layer_vertices.append(x)
+				layer_vertices.append(y)
+				layer_vertices.append(z)
 				
-			count = len(layer.segments)
-			vertex_list = pyglet.graphics.vertex_list(len(vertices)/3,
-				('v3f/static', vertices),
-				('c4B/dynamic', [128]*(4*2*count))	# dummy colors
-			)
+			self.vertices.append(layer_vertices)
 			
-			self.graphics.append(vertex_list)
-			
-	def renderColorIndex(self):
+		t2 = time.time()
+		print "end renderColors in %0.3f ms" % ((t2-t1)*1000.0, )
+	
+	def renderIndexedColors(self):
+		t1 = time.time()
 		# pre-render segments to colors in the index
 		styleToColoridx = {
 			"extrude" : 0,
@@ -79,79 +77,90 @@ class App:
 			"restore" : 3
 			}
 		
-		# all the color indexes for all layers
-		self.colorIndexes = []
+		# all the styles for all layers
+		self.vertex_indexed_colors = []
 		
 		# for all layers
 		for layer in self.model.layers:
 			
 			# index for this layer
-			colorIndex = []
+			layer_vertex_indexed_colors = []
 			for seg in layer.segments:
 				# get color index for this segment
 				styleCol = styleToColoridx[seg.style]
 				# append color twice (once per end)
-				colorIndex.extend((styleCol, styleCol))
+				layer_vertex_indexed_colors.extend((styleCol, styleCol))
 			
 			# append layer to all layers
-			self.colorIndexes.append(colorIndex)
-			
-			print "colorIndex length", len(colorIndex)
+			self.vertex_indexed_colors.append(layer_vertex_indexed_colors)
+		t2 = time.time()
+		print "end renderIndexedColors in %0.3f ms" % ((t2-t1)*1000.0, )
 	
 	def renderColors(self):
+		t1 = time.time()
+		
+		self.vertex_colors = [[],[],[]]
+		
 		# render color index to real colors
 		colorMap = [
 				# 0: old layer
-				[[255,255,255, 96],[255,  0,  0, 64],[  0,  255,  0, 64],[  0,  0,  255, 64]], # extrude, fly, retract, restore
+				[[255,255,255, 40],[255,  0,  0, 20],[  0,  255,  0, 32],[  0,  0,  255, 32]], # extrude, fly, retract, restore
 				# 1: current layer
-				[[255,255,255,128],[255,  0,  0,128],[  0,  255,  0,128],[  0,  0,  255,128]], # extrude, fly, retract, restore
+				[[255,255,255,255],[255,  0,  0,128],[  0,  255,  0,128],[  0,  0,  255,128]], # extrude, fly, retract, restore
 				# 2: limbo layer
 				[[255,255,255, 10],[255,  0,  0, 10],[  0,  255,  0, 10],[  0,  0,  255, 10]] # extrude, fly, retract, restore
 				]
 		
-		colorlists = []
-		
+		# for all 3 types
+		for display_type in xrange(3):
+			
+			type_color_map = colorMap[display_type]
+			
+			# for all preindexed layer colors
+			for indexes in self.vertex_indexed_colors:
+				
+				# render color indexes to colors
+				colors = map(lambda e: type_color_map[e], indexes)
+				# flatten color values
+				fcolors = []
+				map(fcolors.extend, colors)
+				
+				# push colors to vertex list
+				self.vertex_colors[display_type].append(fcolors)
+				
+		t2 = time.time()
+		print "end renderColors in %0.3f ms" % ((t2-t1)*1000.0, )
+	
+	def generateGraphics(self):
 		t1 = time.time()
 		
-		layerIdx = 0
-		# for all preindexed layer colors
-		for layer in self.colorIndexes:
-			# choose color map for this layer
-			layerColorMap = []
-			if layerIdx < self.layerIdx:
-				layerColorMap = colorMap[0]
-			elif layerIdx == self.layerIdx:
-				layerColorMap = colorMap[1]
-			else:
-				layerColorMap = colorMap[2]
+		self.graphics_old = []
+		self.graphics_current = []
+		self.graphics_limbo = []
+		
+		for layer_idx in xrange(len(self.vertices)):
+			nb_layer_vertices = len(self.vertices[layer_idx])/3
+			vertex_list = pyglet.graphics.vertex_list(nb_layer_vertices,
+				('v3f/static', self.vertices[layer_idx]),
+				('c4B/static', self.vertex_colors[0][layer_idx])
+			)
+			self.graphics_old.append(vertex_list)
 			
-			# render color indexes to colors
-			colors = map(lambda e: layerColorMap[e], layer)
-			# flatten color values
-			fcolors = []
-			map(fcolors.extend, colors)
+			vertex_list = pyglet.graphics.vertex_list(nb_layer_vertices,
+				('v3f/static', self.vertices[layer_idx]),
+				('c4B/static', self.vertex_colors[1][layer_idx])
+			)
+			self.graphics_current.append(vertex_list)
 			
-			# save resolved colors
-			colorlists.append(fcolors)
-			
-			layerIdx += 1
-			
+			vertex_list = pyglet.graphics.vertex_list(nb_layer_vertices,
+				('v3f/static', self.vertices[layer_idx]),
+				('c4B/static', self.vertex_colors[2][layer_idx])
+			)
+			self.graphics_limbo.append(vertex_list)
+		#	print nb_layer_vertices, len(self.vertices[layer_idx]), len(self.colors[0][layer_idx])
+		
 		t2 = time.time()
-		
-		layerIdx = 0
-		# for all preindexed layer colors
-		for fcolors in colorlists:
-			# push colors to vertex list
-			vertex_list = self.graphics[layerIdx]
-			vertex_list.colors = fcolors
-			
-			layerIdx += 1
-			
-		t3 = time.time()
-		
-		print "end renderColors"
-		print 'resolving took %0.3f ms' % ((t2-t1)*1000.0, )
-		print 'pushing took %0.3f ms' % ((t3-t2)*1000.0, )
+		print "end generateGraphics in %0.3f ms" % ((t2-t1)*1000.0, )
 		
 class MyWindow(pyglet.window.Window):
 
@@ -269,8 +278,22 @@ class MyWindow(pyglet.window.Window):
 		scale = app.zoom / max(app.model.extents[0], app.model.extents[2], app.model.extents[5])
 		glScaled(scale, scale, scale)
 		
+		
+		glLineWidth(1)
 		# Draw the model layers
-		for graphic in app.graphics:
+		# lower layers
+		for graphic in app.graphics_old[0:app.layerIdx]:
+			graphic.draw(GL_LINES)
+		
+		glLineWidth(2)
+		
+		# highlighted layer
+		graphic = app.graphics_current[app.layerIdx]
+		graphic.draw(GL_LINES)
+		
+		glLineWidth(1)
+		# limbo layers
+		for graphic in app.graphics_limbo[app.layerIdx+1:]:
 			graphic.draw(GL_LINES)
 		
 		
@@ -339,8 +362,6 @@ def layer_drag_do(x, y, dx, dy, buttons, modifiers):
 	app.layerIdx = max(min(app.layerIdx, app.model.topLayer), 0)
 	
 	layerLabel.text = "layer %d"%app.layerIdx
-	#print "renderColors"
-	app.renderColors()
 	
 #	# clamp layer to 0-max, with origin slip
 #	if (app.layerIdx < 0):
@@ -367,11 +388,16 @@ print "Yet Another GCode Viewer v%s"%YAGV_VERSION
 
 path = "test.gcode"
 
-import sys 
+import sys
 if len(sys.argv) > 1:
 	path = sys.argv[1]
 
+
+print "loading file..."
+t1 = time.time()
 app = App().run(path)
+t2 = time.time()
+print "loaded file in %0.3f ms" % ((t2-t1)*1000.0, )
 
 
 window = MyWindow(None, None, "Yet Another GCode Viewer v%s"%YAGV_VERSION, True)
@@ -420,9 +446,14 @@ trLabels.append(layerLabel)
 window.placeLabels(window.width, window.height)
 
 # render the model
+print "rendering vertices..."
 app.renderVertices()
-app.renderColorIndex()
-app.layerIdx = 120
+print "rendering indexed colors..."
+app.renderIndexedColors()
+print "rendering true colors..."
 app.renderColors()
+print "generating graphics..."
+app.generateGraphics()
+print "Done"
 
 pyglet.app.run()
