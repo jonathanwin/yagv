@@ -1,4 +1,4 @@
-# yagv - Yet Another Gcode Viewer, v0.3
+# yagv - Yet Another Gcode Viewer, v0.3b
 
 A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL (via pyglet)
 
@@ -13,7 +13,8 @@ Designed in Ubuntu Linux; Expected to work in any Linux, Windows or OS X
 
 ## Usage:
 
-yagv file.gcode
+yagv [file.gcode]
+* By default, open data/hana_swimsuit_fv_solid_v1.gcode if no file specified
 
 ## Features:
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-YAGV_VERSION = "0.3"
+YAGV_VERSION = "0.3b"
 
 import pyglet
 
@@ -34,8 +34,9 @@ class App:
 		print
 		print "Done! %s"%self.model
 		print
-
-		self.layerIdx = 0
+		
+		# default to the middle layer
+		self.layerIdx = len(self.model.layers)/2
 		
 		return self
 		
