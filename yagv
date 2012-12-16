@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-YAGV_VERSION = "0.2-coloring"
+YAGV_VERSION = "0.3"
 
 import pyglet
 
