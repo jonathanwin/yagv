@@ -386,12 +386,16 @@ def layer_drag_end(x, y, button, modifiers):
 #### MAIN CODE ####
 print "Yet Another GCode Viewer v%s"%YAGV_VERSION
 
-path = "test.gcode"
-
 import sys
 if len(sys.argv) > 1:
 	path = sys.argv[1]
-
+else:
+	# get the real path to the script
+	script_path = os.path.realpath(__file__)
+	# get the containing folder
+	script_dir = os.path.dirname(script_path)
+	# default to hana
+	path = os.path.join(script_dir, "data/hana_swimsuit_fv_solid_v1.gcode")
 
 print "loading file..."
 t1 = time.time()
