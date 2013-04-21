@@ -80,13 +80,11 @@ class GcodeParser:
 		
 	def parse_G90(self, args):
 		# G90: Set to Absolute Positioning
-		# Default, nothing to do
-		pass
+		self.model.setRelative(False)
 		
 	def parse_G91(self, args):
 		# G91: Set to Relative Positioning
-		# unsupported
-		self.error("Not yet supported: G91: Set to Relative Positioning")
+		self.model.setRelative(True)
 		
 	def parse_G92(self, args):
 		# G92: Set Position
@@ -150,6 +148,8 @@ class GcodeModel:
 			"Y":0.0,
 			"Z":0.0,
 			"E":0.0}
+		# if true, args for move (G1) are given relatively (default: absolute)
+		self.isRelative = False
 		# the segments
 		self.segments = []
 		self.layers = None
@@ -164,7 +164,10 @@ class GcodeModel:
 		# update changed coords
 		for axis in args.keys():
 			if coords.has_key(axis):
-				coords[axis] = args[axis]
+				if self.isRelative:
+					coords[axis] += args[axis]
+				else:
+					coords[axis] = args[axis]
 			else:
 				self.warn("Unknown axis '%s'"%axis)
 		# build segment
@@ -203,6 +206,9 @@ class GcodeModel:
 				self.relative[axis] = args[axis]
 			else:
 				self.warn("Unknown axis '%s'"%axis)
+
+	def setRelative(self, isRelative):
+		self.isRelative = isRelative
 		
 	def addSegment(self, segment):
 		self.segments.append(segment)
@@ -261,7 +267,7 @@ class GcodeModel:
 			
 			#print coords
 			#print seg.coords
-	#		print "%s (%s  | %s)"%(style, str(seg.coords), seg.line)
+			#print "%s (%s  | %s)"%(style, str(seg.coords), seg.line)
 			#print
 			
 			# execute segment
