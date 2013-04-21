@@ -99,6 +99,39 @@ class GcodeParser:
 		print "[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line)
 		raise Exception("[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line))
 
+class BBox(object):
+	
+	def __init__(self, coords):
+		self.xmin = self.xmax = coords["X"]
+		self.ymin = self.ymax = coords["Y"]
+		self.zmin = self.zmax = coords["Z"]
+		
+	def dx(self):
+		return self.xmax - self.xmin
+	
+	def dy(self):
+		return self.ymax - self.ymin
+	
+	def dz(self):
+		return self.zmax - self.zmin
+		
+	def cx(self):
+		return (self.xmax + self.xmin)/2
+	
+	def cy(self):
+		return (self.ymax + self.ymin)/2
+	
+	def cz(self):
+		return (self.zmax + self.zmin)/2
+	
+	def extend(self, coords):
+		self.xmin = min(self.xmin, coords["X"])
+		self.xmax = max(self.xmax, coords["X"])
+		self.ymin = min(self.ymin, coords["Y"])
+		self.ymax = max(self.ymax, coords["Y"])
+		self.zmin = min(self.zmin, coords["Z"])
+		self.zmax = max(self.zmax, coords["Z"])
+		
 class GcodeModel:
 	
 	def __init__(self, parser):
@@ -122,7 +155,7 @@ class GcodeModel:
 		self.layers = None
 		self.distance = None
 		self.extrudate = None
-		self.extents = None
+		self.bbox = None
 	
 	def do_G1(self, args, type):
 		# G0/G1: Rapid/Controlled move
@@ -214,18 +247,17 @@ class GcodeModel:
 				(seg.coords["E"] > coords["E"]) ):
 				style = "extrude"
 			
+			# positive extruder movement in a different Z signals a layer change for this segment
+			if (
+				(seg.coords["E"] > coords["E"]) and
+				(seg.coords["Z"] != currentLayerZ) ):
+				currentLayerZ = seg.coords["Z"]
+				currentLayerIdx += 1
 			
 			# set style and layer in segment
 			seg.style = style
 			seg.layerIdx = currentLayerIdx
 			
-			
-			# moving down to a different Z signals a layer change for the next segment
-			if (
-				(seg.coords["Z"] < coords["Z"]) and
-				(seg.coords["Z"] != currentLayerZ) ):
-				currentLayerZ = seg.coords["Z"]
-				currentLayerIdx += 1
 			
 			#print coords
 			#print seg.coords
@@ -273,25 +305,16 @@ class GcodeModel:
 		self.distance = 0
 		self.extrudate = 0
 		
-		# init model extents
-		self.extents = []
+		# init model bbox
+		self.bbox = None
 		
 		# extender helper
-		def extend(extents, coords):
-			if not len(extents):
-				extents.append(coords["X"])
-				extents.append(coords["X"])
-				extents.append(coords["Y"])
-				extents.append(coords["Y"])
-				extents.append(coords["Z"])
-				extents.append(coords["Z"])
+		def extend(bbox, coords):
+			if bbox is None:
+				return BBox(coords)
 			else:
-				extents[0] = min(self.extents[0], coords["X"])
-				extents[1] = max(self.extents[1], coords["X"])
-				extents[2] = min(self.extents[2], coords["Y"])
-				extents[3] = max(self.extents[3], coords["Y"])
-				extents[4] = min(self.extents[4], coords["Z"])
-				extents[5] = max(self.extents[5], coords["Z"])
+				bbox.extend(coords)
+				return bbox
 		
 		# for all layers
 		for layer in self.layers:
@@ -303,7 +326,7 @@ class GcodeModel:
 			layer.extrudate = 0
 			
 			# include start point
-			extend(self.extents, coords)
+			self.bbox = extend(self.bbox, coords)
 			
 			# for all segments
 			for seg in layer.segments:
@@ -324,7 +347,7 @@ class GcodeModel:
 				coords = seg.coords
 				
 				# include end point
-				extend(self.extents, coords)
+				extend(self.bbox, coords)
 			
 			# accumulate total metrics
 			self.distance += layer.distance
@@ -336,7 +359,7 @@ class GcodeModel:
 		self.calcMetrics()
 
 	def __str__(self):
-		return "<GcodeModel: len(segments)=%d, len(layers)=%d, distance=%f, extrudate=%f, extents=%s>"%(len(self.segments), len(self.layers), self.distance, self.extrudate, self.extents)
+		return "<GcodeModel: len(segments)=%d, len(layers)=%d, distance=%f, extrudate=%f, bbox=%s>"%(len(self.segments), len(self.layers), self.distance, self.extrudate, self.bbox)
 	
 class Segment:
 	def __init__(self, type, coords, lineNb, line):
