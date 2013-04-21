@@ -1,4 +1,4 @@
-# yagv - Yet Another Gcode Viewer, v0.3b
+# yagv - Yet Another Gcode Viewer, v0.4
 
 A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL (via pyglet)
 
@@ -33,7 +33,6 @@ yagv [file.gcode]
 * Panning for close inspection not yet supported.
 * Retract/restore detected but invisible (0-length segments).
 * Designed with Slic3r output in mind, may not support other slicing programs (suggestions/patches welcome).
-* Some gcodes unsupported:
-  * G91: Set to Relative Positioning (used by some slicers)
+* Some gcodes unsupported, in particular:
   * G20: Set Units to Inches (usage unknown) 
   * Arcs (G2 & G3 ?)
