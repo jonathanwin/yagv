@@ -19,10 +19,26 @@ import time
 
 class App:
 	def __init__(self):
-		self.RX = 0.0
-		self.RZ = 0.0
+		self.RX   = 0.0
+		self.RZ   = 0.0
 		self.zoom = 1.0
-	
+
+		self.layerDragStartLayer = None
+		self.layerDragStartX     = None
+		self.layerDragStartY     = None
+
+		self.rotateDragStartRX = None
+		self.rotateDragStartRZ = None
+		self.rotateDragStartX  = None
+		self.rotateDragStartY  = None
+		
+		self.viewHeight = 0.0
+		self.pressedShift = False
+		self.pressedCtrl  = False
+
+		# testing only
+		self.aaa = 0.0
+		
 	def main(self):
 		
 		#### MAIN CODE ####
@@ -219,12 +235,13 @@ class App:
 
 
 	def rotate_drag_do(self, x, y, dx, dy, buttons, modifiers):
-		# deltas
-		deltaX = x - self.rotateDragStartX
-		deltaY = y - self.rotateDragStartY
-		# rotate!
-		self.RZ = self.rotateDragStartRZ + deltaX/5.0 # mouse X bound to model Z
-		self.RX = self.rotateDragStartRX + deltaY/5.0 # mouse Y bound to model X
+		if self.rotateDragStartRX is not None:
+			# deltas
+			deltaX = x - self.rotateDragStartX
+			deltaY = y - self.rotateDragStartY
+			# rotate!
+			self.RZ = self.rotateDragStartRZ + deltaX/5.0 # mouse X bound to model Z
+			self.RX = self.rotateDragStartRX + deltaY/5.0 # mouse Y bound to model X
 
 
 	def rotate_drag_end(self, x, y, button, modifiers):
@@ -232,7 +249,7 @@ class App:
 		self.rotateDragStartRZ = None
 		self.rotateDragStartX = None
 		self.rotateDragStartY = None
-
+		
 
 	def layer_drag_start(self, x, y, button, modifiers):
 		self.layerDragStartLayer = self.layerIdx
@@ -241,33 +258,34 @@ class App:
 
 
 	def layer_drag_do(self, x, y, dx, dy, buttons, modifiers):
-		# sum x & y
-		delta = x - self.layerDragStartX + y - self.layerDragStartY
-		# new theoretical layer
-		self.layerIdx = int(self.layerDragStartLayer + delta/5)
-		# clamp layer to 0-max
-		self.layerIdx = max(min(self.layerIdx, self.model.topLayer), 0)
-		
-		self.window.layerLabel.text = "layer %d"%self.layerIdx
-		
-	#	# clamp layer to 0-max, with origin slip
-	#	if (self.layerIdx < 0):
-	#		self.layerIdx = 0
-	#		self.layerDragStartLayer = 0
-	#		self.layerDragStartX = x
-	#		self.layerDragStartY = y
-	#	if (self.layerIdx > len(self.model.layers)-1):
-	#		self.layerIdx = len(self.model.layers)-1
-	#		self.layerDragStartLayer = len(self.model.layers)-1
-	#		self.layerDragStartX = x
-	#		self.layerDragStartY = y
+		if self.layerDragStartLayer is not None:
+			# sum x & y
+			delta = x - self.layerDragStartX + y - self.layerDragStartY
+			# new theoretical layer
+			self.layerIdx = int(self.layerDragStartLayer + delta/5)
+			# clamp layer to 0-max
+			self.layerIdx = max(min(self.layerIdx, self.model.topLayer), 0)
+			
+			self.window.layerLabel.text = "layer %d"%self.layerIdx
+			
+		#	# clamp layer to 0-max, with origin slip
+		#	if (self.layerIdx < 0):
+		#		self.layerIdx = 0
+		#		self.layerDragStartLayer = 0
+		#		self.layerDragStartX = x
+		#		self.layerDragStartY = y
+		#	if (self.layerIdx > len(self.model.layers)-1):
+		#		self.layerIdx = len(self.model.layers)-1
+		#		self.layerDragStartLayer = len(self.model.layers)-1
+		#		self.layerDragStartX = x
+		#		self.layerDragStartY = y
 
 
 	def layer_drag_end(self, x, y, button, modifiers):
 		self.layerDragStartLayer = None
 		self.layerDragStartX = None
 		self.layerDragStartY = None
-
+		
 
 class MyWindow(pyglet.window.Window):
 
@@ -290,12 +308,13 @@ class MyWindow(pyglet.window.Window):
 		self.helpText = [
 						"Ctrl-R to reload file",
 						"Right-click & drag (any direction) to change layer",
+						"Scroll + Shift to move up/down",
 						"Scroll to zoom",
 						"Left-click & drag to rotate view"]
 		for txt in self.helpText:
 			self.blLabels.append(
 				pyglet.text.Label(	txt,
-									font_size=12) )
+									font_size=10) )
 
 		# statistics
 		## model stats
@@ -333,20 +352,29 @@ class MyWindow(pyglet.window.Window):
 
 	def on_mouse_press(self, x, y, button, modifiers):
 		#print "on_mouse_press(x=%d, y=%d, button=%s, modifiers=%s)"%(x, y, button, modifiers)
-		if button & mouse.LEFT:
-			self.app.rotate_drag_start(x, y, button, modifiers)
-			
-		if button & mouse.RIGHT:
-			self.app.layer_drag_start(x, y, button, modifiers)
+		if modifiers == 0:
+			if button & mouse.LEFT:
+				self.app.rotate_drag_start(x, y, button, modifiers)
+				
+			if button & mouse.RIGHT:
+				self.app.layer_drag_start(x, y, button, modifiers)
+
+		elif modifiers == key.MOD_SHIFT:
+			pass
 
 
 	def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
 		#print "on_mouse_drag(x=%d, y=%d, dx=%d, dy=%d, buttons=%s, modifiers=%s)"%(x, y, dx, dy, buttons, modifiers)
-		if buttons & mouse.LEFT:
-			self.app.rotate_drag_do(x, y, dx, dy, buttons, modifiers)
-			
-		if buttons & mouse.RIGHT:
-			self.app.layer_drag_do(x, y, dx, dy, buttons, modifiers)
+		if modifiers == 0:
+			if buttons & mouse.LEFT:
+				self.app.rotate_drag_do(x, y, dx, dy, buttons, modifiers)
+				
+			if buttons & mouse.RIGHT:
+				self.app.layer_drag_do(x, y, dx, dy, buttons, modifiers)
+				
+		elif modifiers == key.MOD_SHIFT:
+			if buttons & mouse.LEFT:
+				pass
 
 
 	def on_mouse_release(self, x, y, button, modifiers):
@@ -357,10 +385,30 @@ class MyWindow(pyglet.window.Window):
 		if button & mouse.RIGHT:
 			self.app.layer_drag_end(x, y, button, modifiers)
 
+
+	def on_key_press(self, symbol, modifiers):
+		if symbol == key.LSHIFT or symbol == key.RSHIFT:
+			print("SHIFT")
+			self.app.pressedShift = True;
+			
+		if symbol == key.LCTRL or symbol == key.RCTRL:
+			print("CTRL")
+			self.app.pressedCtrl = True;
+		
+
 	def on_key_release(self, symbol, modifiers):
 		print "pressed key: %s, mod: %s"%(symbol, modifiers)
 		#print "pressed key: %s, mod: %s"%(pyglet.window.key.R, pyglet.window.key.MOD_CTRL)
-		if symbol==pyglet.window.key.R and modifiers & pyglet.window.key.MOD_CTRL:
+
+		if symbol == key.LSHIFT or symbol == key.RSHIFT:
+			# This, of course, won't work if the windows loses thew focus...
+			self.app.pressedShift = False;
+
+		if symbol == key.LCTRL or symbol == key.RCTRL:
+			# same focus problem like above
+			self.app.pressedCtrl = False;
+		
+		if symbol==key.R and modifiers & key.MOD_CTRL:
 			self.app.reload()
 		
 	def placeLabels(self, width, height):
@@ -394,10 +442,28 @@ class MyWindow(pyglet.window.Window):
 
 
 	def on_mouse_scroll(self, x, y, dx, dy):
-		# zoom on mouse scroll
 		delta = dx + dy
-		z = 1.2 if delta>0 else 1/1.2
-		self.app.zoom = max(1.0, self.app.zoom * z)
+
+		# scroll with SHIFT: translate height
+		if self.app.pressedShift:
+			if delta > 0:
+				self.app.viewHeight += 2;
+			elif delta < 0:
+				self.app.viewHeight -= 2;
+				
+		# scroll with CTRL: nothing in here, yet
+		elif self.app.pressedCtrl:
+			if delta > 0:
+				self.app.aaa += 2;
+			elif delta < 0:
+				self.app.aaa -= 2;
+			
+		# scroll: zomm in/out
+		else:
+			z = 1.2 if delta>0 else 1/1.2
+			self.app.zoom = max(1.0, self.app.zoom * z)
+
+
 
 	def on_draw(self):
 		#print "draw"
@@ -413,21 +479,8 @@ class MyWindow(pyglet.window.Window):
 		# setup camera
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
-		gluLookAt(0,1.5,2,0,0,0,0,1,0)
-		
-		# enable alpha blending
-		glEnable(GL_BLEND)
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-		
-		# rotate axes to match reprap style
-		glRotated(-90, 1,0,0)
-		# user rotate model
-		glRotated(-self.app.RX, 1,0,0)
-		glRotated(self.app.RZ, 0,0,1)
-		
-		# Todo check this
-		glTranslated(0,0,-0.5)
-		
+		gluLookAt( 0, 1.5, 2,    0 ,0 ,0 ,   0 ,1 ,0 )
+
 		# fit & user zoom model
 		max_width = max(
 			self.app.model.bbox.dx(),
@@ -436,10 +489,27 @@ class MyWindow(pyglet.window.Window):
 		)
 		scale = self.app.zoom / max_width
 		glScaled(scale, scale, scale)
+
+		# adjust camera height
+		gluLookAt( 0, self.app.viewHeight, 2,    0 ,self.app.viewHeight ,0 ,   0 ,1 , 0 )
+		
+		# enable alpha blending
+		glEnable(GL_BLEND)
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+		# rotate axes to match reprap style
+		glRotated(-90, 1,0,0)
+
+		glTranslated(0,0,self.app.viewHeight)
+		
+		# user rotate model
+		glRotated(-self.app.RX, 1,0,0)
+		glRotated(self.app.RZ, 0,0,1)
+
+		# modify the height
+		glTranslated(0,0,-self.app.viewHeight)
 		
 		glTranslated(-self.app.model.bbox.cx(), -self.app.model.bbox.cy(), -self.app.model.bbox.cz())
-		
-		
 		
 		# draw axes
 		glBegin(GL_LINES)

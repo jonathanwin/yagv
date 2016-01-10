@@ -4,6 +4,7 @@ A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL (via p
 
 Designed in Ubuntu Linux; Expected to work in any Linux, Windows or OS X
 
+
 ## Requires:
 
 * python 2.x (2.7.3 tested)
@@ -36,3 +37,8 @@ yagv [file.gcode]
 * Some gcodes unsupported, in particular:
   * G20: Set Units to Inches (usage unknown) 
   * Arcs (G2 & G3 ?)
+
+## FMMT666's Changes:
+
+* Model can now be moved up and down (SHIFT + scroll).
+* The scene now rotates around the center of the display, not the object.
