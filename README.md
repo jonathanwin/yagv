@@ -40,5 +40,7 @@ yagv [file.gcode]
 
 ## FMMT666's Changes:
 
-* Model can now be moved up and down (SHIFT + scroll).
+* Model can now be moved up and down
 * The scene now rotates around the center of the display, not the object.
+* Implemented complete mouse functionality, compatible with touch- or trackpads (also Mac):
+ 

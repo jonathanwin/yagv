@@ -19,20 +19,27 @@ import time
 
 class App:
 	def __init__(self):
-		self.RX   = 0.0
-		self.RZ   = 0.0
-		self.zoom = 1.0
-
-		self.layerDragStartLayer = None
-		self.layerDragStartX     = None
-		self.layerDragStartY     = None
-
+		
+		# viewport variables
+		self.RX         = 0.0
+		self.RZ         = 0.0
+		self.zoom       = 1.0
+		self.viewHeight = 0.0
+		
+		# flags and variables for mouse operation "rotate"
+		self.rotateDrag        = False # dragging in progess
 		self.rotateDragStartRX = None
 		self.rotateDragStartRZ = None
 		self.rotateDragStartX  = None
 		self.rotateDragStartY  = None
 		
-		self.viewHeight = 0.0
+		# flags and variables for mouse operation "layer change"
+		self.layerDrag           = False # dragging in progess
+		self.layerDragStartLayer = None
+		self.layerDragStartX     = None
+		self.layerDragStartY     = None
+		
+		# flags for keyboard modifiers
 		self.pressedShift = False
 		self.pressedCtrl  = False
 
@@ -225,40 +232,39 @@ class App:
 		
 		t2 = time.time()
 		print "end generateGraphics in %0.3f ms" % ((t2-t1)*1000.0, )
-		
-		
-	def rotate_drag_start(self, x, y, button, modifiers):
-		self.rotateDragStartRX = self.RX
-		self.rotateDragStartRZ = self.RZ
-		self.rotateDragStartX = x
-		self.rotateDragStartY = y
 
 
 	def rotate_drag_do(self, x, y, dx, dy, buttons, modifiers):
-		if self.rotateDragStartRX is not None:
+		if self.rotateDrag:
 			# deltas
 			deltaX = x - self.rotateDragStartX
 			deltaY = y - self.rotateDragStartY
 			# rotate!
 			self.RZ = self.rotateDragStartRZ + deltaX/5.0 # mouse X bound to model Z
 			self.RX = self.rotateDragStartRX + deltaY/5.0 # mouse Y bound to model X
+		else:
+			self.rotateDragStartRX = self.RX
+			self.rotateDragStartRZ = self.RZ
+			self.rotateDragStartX  = x
+			self.rotateDragStartY  = y
+			self.rotateDrag        = True
 
 
 	def rotate_drag_end(self, x, y, button, modifiers):
 		self.rotateDragStartRX = None
 		self.rotateDragStartRZ = None
-		self.rotateDragStartX = None
-		self.rotateDragStartY = None
+		self.rotateDragStartX  = None
+		self.rotateDragStartY  = None
+		self.rotateDrag        = False
 		
+	def layer_next_up(self, delta = 1):
+			self.layerIdx = max(min(self.layerIdx + delta, self.model.topLayer), 0)
 
-	def layer_drag_start(self, x, y, button, modifiers):
-		self.layerDragStartLayer = self.layerIdx
-		self.layerDragStartX = x
-		self.layerDragStartY = y
-
+	def layer_next_down(self, delta = 1):
+			self.layerIdx = max(min(self.layerIdx - delta, self.model.topLayer), 0)
 
 	def layer_drag_do(self, x, y, dx, dy, buttons, modifiers):
-		if self.layerDragStartLayer is not None:
+		if self.layerDrag:
 			# sum x & y
 			delta = x - self.layerDragStartX + y - self.layerDragStartY
 			# new theoretical layer
@@ -268,24 +274,23 @@ class App:
 			
 			self.window.layerLabel.text = "layer %d"%self.layerIdx
 			
-		#	# clamp layer to 0-max, with origin slip
-		#	if (self.layerIdx < 0):
-		#		self.layerIdx = 0
-		#		self.layerDragStartLayer = 0
-		#		self.layerDragStartX = x
-		#		self.layerDragStartY = y
-		#	if (self.layerIdx > len(self.model.layers)-1):
-		#		self.layerIdx = len(self.model.layers)-1
-		#		self.layerDragStartLayer = len(self.model.layers)-1
-		#		self.layerDragStartX = x
-		#		self.layerDragStartY = y
-
+		else:
+			self.layerDragStartLayer = self.layerIdx
+			self.layerDragStartX     = x
+			self.layerDragStartY     = y
+			self.layerDrag           = True
+			
 
 	def layer_drag_end(self, x, y, button, modifiers):
 		self.layerDragStartLayer = None
-		self.layerDragStartX = None
-		self.layerDragStartY = None
+		self.layerDragStartX     = None
+		self.layerDragStartY     = None
+		self.layerDrag           = False
 		
+		
+	def move_view_z(self, dz):
+		self.viewHeight += dz
+
 
 class MyWindow(pyglet.window.Window):
 
@@ -307,20 +312,16 @@ class MyWindow(pyglet.window.Window):
 		# help
 		self.helpText = [
 						"Ctrl-R to reload file",
-						"Right-click & drag (any direction) to change layer",
-						"Scroll + Shift to move up/down",
-						"Scroll to zoom",
-						"Left-click & drag to rotate view"]
+						"layer - scroll+ctrl or scroll+ctrl+shift or right+ctrl",
+						"zoom - scroll",
+						"up/down - mouse right or mouse left+shift or scroll+shift",
+						"rotate - mouse left"]
 		for txt in self.helpText:
-			self.blLabels.append(
-				pyglet.text.Label(	txt,
-									font_size=10) )
+			self.blLabels.append( pyglet.text.Label( txt, font_size=10 ) )
 
 		# statistics
 		## model stats
-		self.statsLabel = pyglet.text.Label(	"",
-										font_size=12,
-										anchor_y='top')
+		self.statsLabel = pyglet.text.Label( "", font_size=12, anchor_y='top' )
 		filename = os.path.basename(self.app.path)
 		self.statsLabel.text = "%s: %d segments, %d layers."%(filename, len(self.app.model.segments), len(self.app.model.layers))
 		
@@ -352,35 +353,45 @@ class MyWindow(pyglet.window.Window):
 
 	def on_mouse_press(self, x, y, button, modifiers):
 		#print "on_mouse_press(x=%d, y=%d, button=%s, modifiers=%s)"%(x, y, button, modifiers)
-		if modifiers == 0:
-			if button & mouse.LEFT:
-				self.app.rotate_drag_start(x, y, button, modifiers)
-				
-			if button & mouse.RIGHT:
-				self.app.layer_drag_start(x, y, button, modifiers)
-
-		elif modifiers == key.MOD_SHIFT:
-			pass
+			
+		# ASkr: removed both of these to have a "mouse click" for other stuff.
+		#if button & mouse.LEFT:
+		#	self.app.rotate_drag_start(x, y, button, modifiers)
+		#if button & mouse.RIGHT:
+		#	self.app.layer_drag_start(x, y, button, modifiers)
+		
+		pass
 
 
 	def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-		#print "on_mouse_drag(x=%d, y=%d, dx=%d, dy=%d, buttons=%s, modifiers=%s)"%(x, y, dx, dy, buttons, modifiers)
+	
+		# --- NO MODIFIERS
 		if modifiers == 0:
+			# left drag rotates view
 			if buttons & mouse.LEFT:
 				self.app.rotate_drag_do(x, y, dx, dy, buttons, modifiers)
+			# right drag moves view up/down
+			if buttons & mouse.RIGHT:
+				self.app.move_view_z( -dy / 10.0 )
 				
+		# --- SHIFT
+		elif modifiers == key.MOD_SHIFT:
+			# left drag + SHIFT moves view up/down
+			if buttons & mouse.LEFT:
+				self.app.move_view_z( -dy / 10.0 )
+				
+		# --- CTRL
+		elif modifiers == key.MOD_CTRL:
+			# right drag + CTRL selects layer (touchpad compatibility)
 			if buttons & mouse.RIGHT:
 				self.app.layer_drag_do(x, y, dx, dy, buttons, modifiers)
-				
-		elif modifiers == key.MOD_SHIFT:
-			if buttons & mouse.LEFT:
-				pass
 
 
 	def on_mouse_release(self, x, y, button, modifiers):
 		#print "on_mouse_release(x=%d, y=%d, button=%s, modifiers=%s)"%(x, y, button, modifiers)
 		if button & mouse.LEFT:
-			self.app.rotate_drag_end(x, y, button, modifiers)
+			if self.app.rotateDrag == True:
+				self.app.rotate_drag_end(x, y, button, modifiers)
 			
 		if button & mouse.RIGHT:
 			self.app.layer_drag_end(x, y, button, modifiers)
@@ -401,7 +412,7 @@ class MyWindow(pyglet.window.Window):
 		#print "pressed key: %s, mod: %s"%(pyglet.window.key.R, pyglet.window.key.MOD_CTRL)
 
 		if symbol == key.LSHIFT or symbol == key.RSHIFT:
-			# This, of course, won't work if the windows loses thew focus...
+			# This, of course, won't work if the windows loses the focus...
 			self.app.pressedShift = False;
 
 		if symbol == key.LCTRL or symbol == key.RCTRL:
@@ -444,21 +455,28 @@ class MyWindow(pyglet.window.Window):
 	def on_mouse_scroll(self, x, y, dx, dy):
 		delta = dx + dy
 
-		# scroll with SHIFT: translate height
-		if self.app.pressedShift:
+		# scroll with SHIFT only: translate height
+		if self.app.pressedShift and not self.app.pressedCtrl:
 			if delta > 0:
-				self.app.viewHeight += 2;
+				self.app.move_view_z(  2.0 )
 			elif delta < 0:
-				self.app.viewHeight -= 2;
+				self.app.move_view_z( -2.0 )
 				
-		# scroll with CTRL: nothing in here, yet
-		elif self.app.pressedCtrl:
+		# scroll with CTRL only: select next layer (slow)
+		elif self.app.pressedCtrl and not self.app.pressedShift:
 			if delta > 0:
-				self.app.aaa += 2;
+				self.app.layer_next_up()
 			elif delta < 0:
-				self.app.aaa -= 2;
+				self.app.layer_next_down()
 			
-		# scroll: zomm in/out
+		# scroll with CTRL and SHIFT: select next layer (fast)
+		elif self.app.pressedCtrl and self.app.pressedShift:
+			if delta > 0:
+				self.app.layer_next_up( 10 )
+			elif delta < 0:
+				self.app.layer_next_down( 10 )
+
+		# scroll: zoom in/out
 		else:
 			z = 1.2 if delta>0 else 1/1.2
 			self.app.zoom = max(1.0, self.app.zoom * z)
