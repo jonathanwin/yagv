@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-YAGV_VERSION = "0.4"
+YAGV_VERSION = "0.5"
 
 import pyglet
 
@@ -312,13 +312,13 @@ class MyWindow(pyglet.window.Window):
 
 		# help
 		self.helpText = [
-						"Ctrl-R to reload file",
-						"layer - mouse left + alt/command; scroll + alt",
-						"zoom - mouse left + ctrl; scroll + ctrl",
+						"reload  - ctrl + r",
+						"layer   - mouse left + alt/command; scroll + alt",
+						"zoom    - mouse left + ctrl; scroll + ctrl",
 						"up/down - mouse left + shift; scroll + shift",
-						"rotate - mouse left"]
+						"rotate  - mouse left"]
 		for txt in self.helpText:
-			self.blLabels.append( pyglet.text.Label( txt, font_size=10 ) )
+			self.blLabels.append( pyglet.text.Label( txt, font_size=10, font_name="courier" ) )
 
 		# statistics
 		## model stats
@@ -351,6 +351,7 @@ class MyWindow(pyglet.window.Window):
 		#self.render(width, height)
 		
 		return pyglet.event.EVENT_HANDLED
+
 
 	def on_mouse_press(self, x, y, button, modifiers):
 		#print "on_mouse_press(x=%d, y=%d, button=%s, modifiers=%s)"%(x, y, button, modifiers)
@@ -389,10 +390,11 @@ class MyWindow(pyglet.window.Window):
 				self.app.zoom = max(1.0, self.app.zoom * z)
 
 		# --- ALT/COMMAND
+		#     Little annoying under Linux because Alt+drag moves windows (o_O),
+		#     but the mouse's scroll wheel function coveres that...
 		elif modifiers == key.MOD_ALT or modifiers == key.MOD_COMMAND:
 			# left drag + ALT selects layer
 			if buttons & mouse.LEFT:
-#				self.app.layer_drag_do(x, y, dx, dy, buttons, modifiers)
 				if dy > 0:
 					self.app.layer_next_up()
 				else:
@@ -422,6 +424,7 @@ class MyWindow(pyglet.window.Window):
 			print("ALT")
 			self.app.pressedAlt = True;
 
+
 	def on_key_release(self, symbol, modifiers):
 		print "pressed key: %s, mod: %s"%(symbol, modifiers)
 		#print "pressed key: %s, mod: %s"%(pyglet.window.key.R, pyglet.window.key.MOD_CTRL)
@@ -440,6 +443,7 @@ class MyWindow(pyglet.window.Window):
 		
 		if symbol==key.R and modifiers & key.MOD_CTRL:
 			self.app.reload()
+
 		
 	def placeLabels(self, width, height):
 		x = 5
@@ -475,21 +479,21 @@ class MyWindow(pyglet.window.Window):
 		delta = dx + dy
 
 		# scroll with SHIFT only: translate height
-		if self.app.pressedShift and not self.app.pressedCtrl:
+		if self.app.pressedShift and not self.app.pressedCtrl and not self.app.pressedAlt:
 			if delta > 0:
 				self.app.move_view_z(  2.0 )
 			elif delta < 0:
 				self.app.move_view_z( -2.0 )
 				
 		# scroll with ALT/COMMAND only: select next layer (slow)
-		elif self.app.pressedAlt and not self.app.pressedShift:
+		elif not self.app.pressedShift and not self.app.pressedCtrl and self.app.pressedAlt:
 			if delta > 0:
 				self.app.layer_next_up()
 			elif delta < 0:
 				self.app.layer_next_down()
 			
 		# scroll with ALT/COMMAND and SHIFT: select next layer (fast)
-		elif self.app.pressedAlt and self.app.pressedShift:
+		elif self.app.pressedShift and not self.app.pressedCtrl and self.app.pressedAlt:
 			if delta > 0:
 				self.app.layer_next_up( 10 )
 			elif delta < 0:
@@ -499,7 +503,6 @@ class MyWindow(pyglet.window.Window):
 		else:
 			z = 1.2 if delta>0 else 1/1.2
 			self.app.zoom = max(1.0, self.app.zoom * z)
-
 
 
 	def on_draw(self):
