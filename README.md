@@ -42,5 +42,5 @@ yagv [file.gcode]
 
 * Model can now be moved up and down
 * The scene now rotates around the center of the display, not the object.
-* Implemented complete mouse functionality, compatible with touch- or trackpads (also Mac):
+* Implemented complete mouse and track-/touchpad functionality. Compatible with Mac.
  

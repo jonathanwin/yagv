@@ -42,6 +42,7 @@ class App:
 		# flags for keyboard modifiers
 		self.pressedShift = False
 		self.pressedCtrl  = False
+		self.pressedAlt   = False # Command for Mac ('Alt' has wrong key code in OS X pyglet)
 
 		# testing only
 		self.aaa = 0.0
@@ -312,9 +313,9 @@ class MyWindow(pyglet.window.Window):
 		# help
 		self.helpText = [
 						"Ctrl-R to reload file",
-						"layer - scroll+ctrl or scroll+ctrl+shift or right+ctrl",
-						"zoom - scroll",
-						"up/down - mouse right or mouse left+shift or scroll+shift",
+						"layer - mouse left + alt/command; scroll + alt",
+						"zoom - mouse left + ctrl; scroll + ctrl",
+						"up/down - mouse left + shift; scroll + shift",
 						"rotate - mouse left"]
 		for txt in self.helpText:
 			self.blLabels.append( pyglet.text.Label( txt, font_size=10 ) )
@@ -373,18 +374,29 @@ class MyWindow(pyglet.window.Window):
 			# right drag moves view up/down
 			if buttons & mouse.RIGHT:
 				self.app.move_view_z( -dy / 10.0 )
-				
+
 		# --- SHIFT
 		elif modifiers == key.MOD_SHIFT:
 			# left drag + SHIFT moves view up/down
 			if buttons & mouse.LEFT:
 				self.app.move_view_z( -dy / 10.0 )
-				
+
 		# --- CTRL
 		elif modifiers == key.MOD_CTRL:
-			# right drag + CTRL selects layer (touchpad compatibility)
-			if buttons & mouse.RIGHT:
-				self.app.layer_drag_do(x, y, dx, dy, buttons, modifiers)
+			# left drag + CTRL zoom
+			if buttons & mouse.LEFT:
+				z = 1.1 if dy>0 else 1/1.1
+				self.app.zoom = max(1.0, self.app.zoom * z)
+
+		# --- ALT/COMMAND
+		elif modifiers == key.MOD_ALT or modifiers == key.MOD_COMMAND:
+			# left drag + ALT selects layer
+			if buttons & mouse.LEFT:
+#				self.app.layer_drag_do(x, y, dx, dy, buttons, modifiers)
+				if dy > 0:
+					self.app.layer_next_up()
+				else:
+					self.app.layer_next_down()
 
 
 	def on_mouse_release(self, x, y, button, modifiers):
@@ -406,6 +418,9 @@ class MyWindow(pyglet.window.Window):
 			print("CTRL")
 			self.app.pressedCtrl = True;
 		
+		if symbol == key.LALT or symbol == key.RALT or symbol == key.LCOMMAND or symbol == key.RCOMMAND:
+			print("ALT")
+			self.app.pressedAlt = True;
 
 	def on_key_release(self, symbol, modifiers):
 		print "pressed key: %s, mod: %s"%(symbol, modifiers)
@@ -418,6 +433,10 @@ class MyWindow(pyglet.window.Window):
 		if symbol == key.LCTRL or symbol == key.RCTRL:
 			# same focus problem like above
 			self.app.pressedCtrl = False;
+
+		if symbol == key.LALT or symbol == key.RALT or symbol == key.LCOMMAND or symbol == key.RCOMMAND:
+			# same here
+			self.app.pressedAlt = False;
 		
 		if symbol==key.R and modifiers & key.MOD_CTRL:
 			self.app.reload()
@@ -462,15 +481,15 @@ class MyWindow(pyglet.window.Window):
 			elif delta < 0:
 				self.app.move_view_z( -2.0 )
 				
-		# scroll with CTRL only: select next layer (slow)
-		elif self.app.pressedCtrl and not self.app.pressedShift:
+		# scroll with ALT/COMMAND only: select next layer (slow)
+		elif self.app.pressedAlt and not self.app.pressedShift:
 			if delta > 0:
 				self.app.layer_next_up()
 			elif delta < 0:
 				self.app.layer_next_down()
 			
-		# scroll with CTRL and SHIFT: select next layer (fast)
-		elif self.app.pressedCtrl and self.app.pressedShift:
+		# scroll with ALT/COMMAND and SHIFT: select next layer (fast)
+		elif self.app.pressedAlt and self.app.pressedShift:
 			if delta > 0:
 				self.app.layer_next_up( 10 )
 			elif delta < 0:
