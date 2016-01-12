@@ -357,7 +357,10 @@ class MyWindow(pyglet.window.Window):
 
 
 	def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-	
+		
+		# ASkr: Suppress unwanted modifiers. Aka.: NUM_LOCK might ruin everything :)
+		modifiers &= ( key.MOD_SHIFT | key.MOD_CTRL | key.MOD_ALT | key.MOD_COMMAND )
+
 		# --- NO MODIFIERS
 		if modifiers == 0:
 			# left drag rotates view
