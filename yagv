@@ -28,14 +28,14 @@ class App:
 		
 		# flags and variables for mouse operation "rotate"
 		self.rotateDrag        = False # dragging in progess
-		self.rotateDragStartRX = None
+		self.rotateDragStartRX = None  # not necessary, only here for visibility
 		self.rotateDragStartRZ = None
 		self.rotateDragStartX  = None
 		self.rotateDragStartY  = None
 		
 		# flags and variables for mouse operation "layer change"
 		self.layerDrag           = False # dragging in progess
-		self.layerDragStartLayer = None
+		self.layerDragStartLayer = None  # not necessary, only here for visibility
 		self.layerDragStartX     = None
 		self.layerDragStartY     = None
 		
@@ -44,9 +44,7 @@ class App:
 		self.pressedCtrl  = False
 		self.pressedAlt   = False # Command for Mac ('Alt' has wrong key code in OS X pyglet)
 
-		# testing only
-		self.aaa = 0.0
-		
+	
 	def main(self):
 		
 		#### MAIN CODE ####
@@ -252,10 +250,6 @@ class App:
 
 
 	def rotate_drag_end(self, x, y, button, modifiers):
-		self.rotateDragStartRX = None
-		self.rotateDragStartRZ = None
-		self.rotateDragStartX  = None
-		self.rotateDragStartY  = None
 		self.rotateDrag        = False
 		
 	def layer_next_up(self, delta = 1):
@@ -283,9 +277,6 @@ class App:
 			
 
 	def layer_drag_end(self, x, y, button, modifiers):
-		self.layerDragStartLayer = None
-		self.layerDragStartX     = None
-		self.layerDragStartY     = None
 		self.layerDrag           = False
 		
 		
