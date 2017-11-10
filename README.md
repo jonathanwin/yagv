@@ -1,8 +1,24 @@
+
+## FMMT666's Changes:
+
+* Model can now be moved up and down
+* The scene now rotates around the center of the display, not the object.
+* Implemented complete mouse and track-/touchpad functionality. Compatible with Mac.
+
+Future changes [tm] might be available from here: [yagv-ng][1].
+
+
+Have fun  
+FMMT666(ASkr)
+
+---
+
 # yagv - Yet Another Gcode Viewer, v0.4
 
 A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL (via pyglet)
 
 Designed in Ubuntu Linux; Expected to work in any Linux, Windows or OS X
+
 
 ## Requires:
 
@@ -36,3 +52,8 @@ yagv [file.gcode]
 * Some gcodes unsupported, in particular:
   * G20: Set Units to Inches (usage unknown) 
   * Arcs (G2 & G3 ?)
+
+---
+
+[1]: https://github.com/FMMT666/yagv-ng
+ 
