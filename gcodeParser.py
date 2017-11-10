@@ -59,7 +59,7 @@ class GcodeParser:
 	def parse_G0(self, args):
 		# G0: Rapid move
 		# same as a controlled move for us (& reprap FW)
-		self.G1(args, "G0")
+		self.parse_G1(args, "G0")
 		
 	def parse_G1(self, args, type="G1"):
 		# G1: Controlled move
