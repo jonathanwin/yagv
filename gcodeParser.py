@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import math
+import re
 
 class GcodeParser:
 	
@@ -26,12 +27,17 @@ class GcodeParser:
 		
 	def parseLine(self):
 		# strip comments:
-		bits = self.line.split(';',1)
-		if (len(bits) > 1):
-			comment = bits[1]
-		
-		# extract & clean command
-		command = bits[0].strip()
+		## first handle round brackets
+		command = re.sub("\([^)]*\)", "", self.line)
+		## then semicolons
+		idx = command.find(';')
+		if idx >= 0:
+			command = command[0:idx].strip()
+		## detect unterminated round bracket comments, just in case
+		idx = command.find('(')
+		if idx >= 0:
+			self.warn("Stripping unterminated round-bracket comment")
+			command = command[0:idx].strip()
 		
 		# TODO strip logical line number & checksum
 		
