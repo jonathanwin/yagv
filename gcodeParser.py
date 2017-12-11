@@ -58,7 +58,10 @@ class GcodeParser:
 			bits = args.split()
 			for bit in bits:
 				letter = bit[0]
-				coord = float(bit[1:])
+				try:
+					coord = float(bit[1:])
+				except ValueError:
+					coord = 1
 				dic[letter] = coord
 		return dic
 

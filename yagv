@@ -396,8 +396,11 @@ class MyWindow(pyglet.window.Window):
 	def on_mouse_scroll(self, x, y, dx, dy):
 		# zoom on mouse scroll
 		delta = dx + dy
+		if delta == 0:
+			return
 		z = 1.2 if delta>0 else 1/1.2
 		self.app.zoom = max(1.0, self.app.zoom * z)
+		#print 'mouse scroll:', `x, y, dx, dy`, `z, self.app.zoom`
 
 	def on_draw(self):
 		#print "draw"
