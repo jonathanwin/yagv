@@ -65,6 +65,15 @@ class GcodeParser:
 				dic[letter] = coord
 		return dic
 
+	def parse_G00(self, args):
+		# G00: Rapid move
+		# same as a controlled move for us (& reprap FW)
+		self.parse_G1(args, "G0")
+
+	def parse_G01(self, args, type="G1"):
+		# G01: Controlled move
+		self.model.do_G1(self.parseArgs(args), type)
+
 	def parse_G0(self, args):
 		# G0: Rapid move
 		# same as a controlled move for us (& reprap FW)
