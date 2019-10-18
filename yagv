@@ -35,7 +35,7 @@ class App:
             # get the containing folder
             script_dir = os.path.dirname(script_path)
             # default to hana
-            path = os.path.join(script_dir, "test.gcode")
+            path = os.path.join(script_dir, "data/hana_swimsuit_fv_solid_v1.gcode")
 
         self.load(path)
 
@@ -157,13 +157,11 @@ class App:
             for indexes in self.vertex_indexed_colors:
                 # render color indexes to colors
                 colors = list(map(lambda e: type_color_map[e], indexes))
-                # print(colors)
                 # flatten color values
                 fcolors = []
                 for i in colors:
                     for j in i:
                         fcolors.append(int(j))
-                # print(fcolors)
 
                 # list(map(fcolors.extend, colors))
                 # push colors to vertex list
@@ -174,7 +172,6 @@ class App:
 
     def generateGraphics(self):
         t1 = time.time()
-        # print(type(count), type(elem_stride),type(elem_offset),type(self.c_type))
         self.graphics_old = []
         self.graphics_current = []
         self.graphics_limbo = []
@@ -182,10 +179,6 @@ class App:
         for layer_idx in range(len(self.vertices)):
             nb_layer_vertices = int(len(self.vertices[layer_idx]) / 3)
 
-            # print("nb_layer_vertices: {}".format(nb_layer_vertices), len(self.vertices[layer_idx]))
-            # print("layer idx: {}".format(layer_idx))
-            # print("vertices: {}".format(self.vertices[layer_idx]))
-            # print("vertex color: {}".format(self.vertex_colors[0][layer_idx]))
             vertex_list = pyglet.graphics.vertex_list(nb_layer_vertices,
                                                       ('v3f/static', self.vertices[layer_idx]),
                                                       ('c4B/static', self.vertex_colors[0][layer_idx])
@@ -238,12 +231,9 @@ class App:
         # sum x & y
         delta = x - self.layerDragStartX + y - self.layerDragStartY
         # new theoretical layer
-        # print(type(self.layerIdx))
         self.layerIdx = int(self.layerDragStartLayer + delta / 5)
         # clamp layer to 0-max
-        # print(type(self.layerIdx))
         self.layerIdx = max(min(self.layerIdx, self.model.topLayer), 0)
-        # print(type(self.layerIdx))
         self.window.layerLabel.text = "layer %d" % self.layerIdx
 
     #    # clamp layer to 0-max, with origin slip
