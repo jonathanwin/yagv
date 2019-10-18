@@ -7,13 +7,12 @@ import pyglet
 # Disable error checking for increased performance
 pyglet.options['debug_gl'] = False
 
-
-from pyglet import clock
-from pyglet.gl import *
-from pyglet.window import key
+# from pyglet import clock
+import pyglet.gl as gl
+# from pyglet.window import key
 from pyglet.window import mouse
-
-from gcodeParser import *
+import sys
+import gcodeParser as gcode
 import os.path
 import time
 
@@ -28,7 +27,6 @@ class App:
         # MAIN CODE #
         print("Yet Another GCode Viewer v%s" % YAGV_VERSION)
 
-        import sys
         if len(sys.argv) > 1:
             path = sys.argv[1]
         else:
@@ -42,7 +40,7 @@ class App:
         self.load(path)
 
         # default to the middle layer
-        self.layerIdx = len(self.model.layers) / 2
+        self.layerIdx = int(len(self.model.layers) / 2)
 
         self.window = MyWindow(self, caption="Yet Another GCode Viewer v%s" % YAGV_VERSION, resizable=True)
 
@@ -64,7 +62,7 @@ class App:
 
         self.path = path
 
-        parser = GcodeParser()
+        parser = gcode.GcodeParser()
         self.model = parser.parseFile(path)
 
         print
@@ -115,12 +113,11 @@ class App:
     def renderIndexedColors(self):
         t1 = time.time()
         # pre-render segments to colors in the index
-        styleToColoridx = {
-	            "extrude": 0,
-	            "fly": 1,
-	            "retract": 2,
-	            "restore" : 3
-	            }
+        styleToColoridx = {"extrude": 0,
+                           "fly": 1,
+                           "retract": 2,
+                           "restore": 3
+                           }
 
         # all the styles for all layers
         self.vertex_indexed_colors = []
@@ -139,74 +136,78 @@ class App:
             # append layer to all layers
             self.vertex_indexed_colors.append(layer_vertex_indexed_colors)
         t2 = time.time()
-        print("end renderIndexedColors in %0.3f ms" % ((t2-t1)*1000.0, )
+        print("end renderIndexedColors in %0.3f ms" % ((t2 - t1) * 1000.0, ))
 
     def renderColors(self):
         t1 = time.time()
 
-        self.vertex_colors = [[],[],[]]
+        self.vertex_colors = [[], [], []]
 
         # render color index to real colors
-        colorMap = [
-                # 0: old layer
-                [[255,255,255, 40],[255,  0,  0, 20],[  0,  255,  0, 32],[  0,  0,  255, 32]], # extrude, fly, retract, restore
-                # 1: current layer
-                [[255,255,255,255],[255,  0,  0,128],[  0,  255,  0,128],[  0,  0,  255,128]], # extrude, fly, retract, restore
-                # 2: limbo layer
-                [[255,255,255, 10],[255,  0,  0, 10],[  0,  255,  0, 10],[  0,  0,  255, 10]] # extrude, fly, retract, restore
-                ]
+        colorMap = [[[255, 255, 255, 40], [255, 0, 0, 20], [0, 255, 0, 32], [0, 0, 255, 32]],  # 0: old layer # extrude, fly, retract, restore
+                    [[255, 255, 255, 255], [255, 0, 0, 128], [0, 255, 0, 128], [0, 0, 255, 128]],   # 1: current layer# extrude, fly, retract, restore
+                    [[255, 255, 255, 10], [255, 0, 0, 10], [0, 255, 0, 10], [0, 0, 255, 10]]  # 2: limbo layer # extrude, fly, retract, restore
+                    ]
 
         # for all 3 types
-        for display_type in xrange(3):
+        for display_type in range(3):
 
             type_color_map = colorMap[display_type]
-
             # for all preindexed layer colors
             for indexes in self.vertex_indexed_colors:
-
                 # render color indexes to colors
-                colors = map(lambda e: type_color_map[e], indexes)
+                colors = list(map(lambda e: type_color_map[e], indexes))
+                # print(colors)
                 # flatten color values
                 fcolors = []
-                map(fcolors.extend, colors)
+                for i in colors:
+                    for j in i:
+                        fcolors.append(int(j))
+                # print(fcolors)
 
+                # list(map(fcolors.extend, colors))
                 # push colors to vertex list
                 self.vertex_colors[display_type].append(fcolors)
 
         t2 = time.time()
-        print("end renderColors in %0.3f ms" % ((t2-t1)*1000.0, )
+        print("end renderColors in %0.3f ms" % ((t2 - t1) * 1000.0, ))
 
     def generateGraphics(self):
         t1 = time.time()
-
+        # print(type(count), type(elem_stride),type(elem_offset),type(self.c_type))
         self.graphics_old = []
         self.graphics_current = []
         self.graphics_limbo = []
 
-        for layer_idx in xrange(len(self.vertices)):
-            nb_layer_vertices = len(self.vertices[layer_idx])/3
+        for layer_idx in range(len(self.vertices)):
+            nb_layer_vertices = int(len(self.vertices[layer_idx]) / 3)
+
+            # print("nb_layer_vertices: {}".format(nb_layer_vertices), len(self.vertices[layer_idx]))
+            # print("layer idx: {}".format(layer_idx))
+            # print("vertices: {}".format(self.vertices[layer_idx]))
+            # print("vertex color: {}".format(self.vertex_colors[0][layer_idx]))
             vertex_list = pyglet.graphics.vertex_list(nb_layer_vertices,
-                ('v3f/static', self.vertices[layer_idx]),
-                ('c4B/static', self.vertex_colors[0][layer_idx])
-            )
+                                                      ('v3f/static', self.vertices[layer_idx]),
+                                                      ('c4B/static', self.vertex_colors[0][layer_idx])
+                                                      )
             self.graphics_old.append(vertex_list)
 
             vertex_list = pyglet.graphics.vertex_list(nb_layer_vertices,
-                ('v3f/static', self.vertices[layer_idx]),
-                ('c4B/static', self.vertex_colors[1][layer_idx])
-            )
+                                                      ('v3f/static', self.vertices[layer_idx]),
+                                                      ('c4B/static', self.vertex_colors[1][layer_idx])
+                                                      )
             self.graphics_current.append(vertex_list)
 
             vertex_list = pyglet.graphics.vertex_list(nb_layer_vertices,
-                ('v3f/static', self.vertices[layer_idx]),
-                ('c4B/static', self.vertex_colors[2][layer_idx])
-            )
+                                                      ('v3f/static', self.vertices[layer_idx]),
+                                                      ('c4B/static', self.vertex_colors[2][layer_idx])
+                                                      )
             self.graphics_limbo.append(vertex_list)
         #    print(nb_layer_vertices, len(self.vertices[layer_idx]), len(self.colors[0][layer_idx])
 
+            # sys.exit()
         t2 = time.time()
-        print("end generateGraphics in %0.3f ms" % ((t2-t1)*1000.0, )
-
+        print("end generateGraphics in %0.3f ms" % ((t2 - t1) * 1000.0, ))
 
     def rotate_drag_start(self, x, y, button, modifiers):
         self.rotateDragStartRX = self.RX
@@ -214,15 +215,13 @@ class App:
         self.rotateDragStartX = x
         self.rotateDragStartY = y
 
-
     def rotate_drag_do(self, x, y, dx, dy, buttons, modifiers):
         # deltas
         deltaX = x - self.rotateDragStartX
         deltaY = y - self.rotateDragStartY
         # rotate!
-        self.RZ = self.rotateDragStartRZ + deltaX/5.0 # mouse X bound to model Z
-        self.RX = self.rotateDragStartRX + deltaY/5.0 # mouse Y bound to model X
-
+        self.RZ = self.rotateDragStartRZ + deltaX / 5.0  # mouse X bound to model Z
+        self.RX = self.rotateDragStartRX + deltaY / 5.0  # mouse Y bound to model X
 
     def rotate_drag_end(self, x, y, button, modifiers):
         self.rotateDragStartRX = None
@@ -230,22 +229,22 @@ class App:
         self.rotateDragStartX = None
         self.rotateDragStartY = None
 
-
     def layer_drag_start(self, x, y, button, modifiers):
         self.layerDragStartLayer = self.layerIdx
         self.layerDragStartX = x
         self.layerDragStartY = y
 
-
     def layer_drag_do(self, x, y, dx, dy, buttons, modifiers):
         # sum x & y
         delta = x - self.layerDragStartX + y - self.layerDragStartY
         # new theoretical layer
-        self.layerIdx = int(self.layerDragStartLayer + delta/5)
+        # print(type(self.layerIdx))
+        self.layerIdx = int(self.layerDragStartLayer + delta / 5)
         # clamp layer to 0-max
+        # print(type(self.layerIdx))
         self.layerIdx = max(min(self.layerIdx, self.model.topLayer), 0)
-
-        self.window.layerLabel.text = "layer %d"%self.layerIdx
+        # print(type(self.layerIdx))
+        self.window.layerLabel.text = "layer %d" % self.layerIdx
 
     #    # clamp layer to 0-max, with origin slip
     #    if (self.layerIdx < 0):
@@ -258,7 +257,6 @@ class App:
     #        self.layerDragStartLayer = len(self.model.layers)-1
     #        self.layerDragStartX = x
     #        self.layerDragStartY = y
-
 
     def layer_drag_end(self, x, y, button, modifiers):
         self.layerDragStartLayer = None
@@ -284,70 +282,65 @@ class MyWindow(pyglet.window.Window):
         self.trLabels = []
 
         # help
-        self.helpText = [
-                        "Ctrl-R to reload file",
-                        "Right-click & drag (any direction) to change layer",
-                        "Scroll to zoom",
-                        "Left-click & drag to rotate view"]
+        self.helpText = ["Ctrl-R to reload file",
+                         "Right-click & drag (any direction) to change layer",
+                         "Scroll to zoom",
+                         "Left-click & drag to rotate view"]
         for txt in self.helpText:
             self.blLabels.append(
-                pyglet.text.Label(    txt,
-                                    font_size=12) )
+                pyglet.text.Label(txt,
+                                  font_size=12))
 
         # statistics
-        ## model stats
-        self.statsLabel = pyglet.text.Label(    "",
-                                        font_size=12,
-                                        anchor_y='top')
+        # model stats
+        self.statsLabel = pyglet.text.Label("",
+                                            font_size=12,
+                                            anchor_y='top')
         filename = os.path.basename(self.app.path)
-        self.statsLabel.text = "%s: %d segments, %d layers."%(filename, len(self.app.model.segments), len(self.app.model.layers))
+        self.statsLabel.text = "%s: %d segments, %d layers." % (filename, len(self.app.model.segments), len(self.app.model.layers))
 
-        ## fps counter
-        self.fpsLabel = pyglet.text.Label(    "",
-                                        font_size=12,
-                                        anchor_y='top')
+        # fps counter
+        self.fpsLabel = pyglet.text.Label("",
+                                          font_size=12,
+                                          anchor_y='top')
         self.tlLabels.append(self.statsLabel)
         self.tlLabels.append(self.fpsLabel)
 
         # status
-        ## current Layer
-        self.layerLabel = pyglet.text.Label(    "layer %d"%self.app.layerIdx,
-                                        font_size=12,
-                                        anchor_x='right', anchor_y='top')
+        # current Layer
+        self.layerLabel = pyglet.text.Label("layer %d" % self.app.layerIdx,
+                                            font_size=12,
+                                            anchor_x='right', anchor_y='top')
         self.trLabels.append(self.layerLabel)
 
         # layout the labels in the window's corners
         self.placeLabels(self.width, self.height)
 
-
     # events
     def on_resize(self, width, height):
-        glViewport(0, 0, width, height)
+        gl.glViewport(0, 0, width, height)
         self.placeLabels(width, height)
-        #self.render(width, height)
-
+        # self.render(width, height)
         return pyglet.event.EVENT_HANDLED
 
     def on_mouse_press(self, x, y, button, modifiers):
-        #print("on_mouse_press(x=%d, y=%d, button=%s, modifiers=%s)"%(x, y, button, modifiers)
+        # print("on_mouse_press(x=%d, y=%d, button=%s, modifiers=%s)"%(x, y, button, modifiers)
         if button & mouse.LEFT:
             self.app.rotate_drag_start(x, y, button, modifiers)
 
         if button & mouse.RIGHT:
             self.app.layer_drag_start(x, y, button, modifiers)
 
-
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        #print("on_mouse_drag(x=%d, y=%d, dx=%d, dy=%d, buttons=%s, modifiers=%s)"%(x, y, dx, dy, buttons, modifiers)
+        # print("on_mouse_drag(x=%d, y=%d, dx=%d, dy=%d, buttons=%s, modifiers=%s)"%(x, y, dx, dy, buttons, modifiers)
         if buttons & mouse.LEFT:
             self.app.rotate_drag_do(x, y, dx, dy, buttons, modifiers)
 
         if buttons & mouse.RIGHT:
             self.app.layer_drag_do(x, y, dx, dy, buttons, modifiers)
 
-
     def on_mouse_release(self, x, y, button, modifiers):
-        #print("on_mouse_release(x=%d, y=%d, button=%s, modifiers=%s)"%(x, y, button, modifiers)
+        # print("on_mouse_release(x=%d, y=%d, button=%s, modifiers=%s)"%(x, y, button, modifiers)
         if button & mouse.LEFT:
             self.app.rotate_drag_end(x, y, button, modifiers)
 
@@ -355,9 +348,9 @@ class MyWindow(pyglet.window.Window):
             self.app.layer_drag_end(x, y, button, modifiers)
 
     def on_key_release(self, symbol, modifiers):
-        print("pressed key: %s, mod: %s"%(symbol, modifiers)
-        #print("pressed key: %s, mod: %s"%(pyglet.window.key.R, pyglet.window.key.MOD_CTRL)
-        if symbol==pyglet.window.key.R and modifiers & pyglet.window.key.MOD_CTRL:
+        print("pressed key: %s, mod: %s" % (symbol, modifiers))
+        # print("pressed key: %s, mod: %s"%(pyglet.window.key.R, pyglet.window.key.MOD_CTRL)
+        if symbol == pyglet.window.key.R and modifiers & pyglet.window.key.MOD_CTRL:
             self.app.reload()
 
     def placeLabels(self, width, height):
@@ -389,44 +382,43 @@ class MyWindow(pyglet.window.Window):
             label.y = y
             y -= 20
 
-
     def on_mouse_scroll(self, x, y, dx, dy):
         # zoom on mouse scroll
         delta = dx + dy
         if delta == 0:
             return
-        z = 1.2 if delta>0 else 1/1.2
+        z = 1.2 if delta > 0 else 1 / 1.2
         self.app.zoom = max(1.0, self.app.zoom * z)
-        #print('mouse scroll:', `x, y, dx, dy`, `z, self.app.zoom`
+        # print('mouse scroll:', `x, y, dx, dy`, `z, self.app.zoom`
 
     def on_draw(self):
-        #print("draw"
+        # print("draw"
 
         # Clear buffers
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
         # setup projection
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(65, self.width / float(self.height), 0.1, 1000)
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
+        gl.gluPerspective(65, self.width / float(self.height), 0.1, 1000)
 
         # setup camera
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-        gluLookAt(0,1.5,2,0,0,0,0,1,0)
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+        gl.glLoadIdentity()
+        gl.gluLookAt(0, 1.5, 2, 0, 0, 0, 0, 1, 0)
 
         # enable alpha blending
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
         # rotate axes to match reprap style
-        glRotated(-90, 1,0,0)
+        gl.glRotated(-90, 1, 0, 0)
         # user rotate model
-        glRotated(-self.app.RX, 1,0,0)
-        glRotated(self.app.RZ, 0,0,1)
+        gl.glRotated(-self.app.RX, 1, 0, 0)
+        gl.glRotated(self.app.RZ, 0, 0, 1)
 
         # Todo check this
-        glTranslated(0,0,-0.5)
+        gl.glTranslated(0, 0, -0.5)
 
         # fit & user zoom model
         max_width = max(
@@ -435,57 +427,72 @@ class MyWindow(pyglet.window.Window):
             self.app.model.bbox.dz()
         )
         scale = self.app.zoom / max_width
-        glScaled(scale, scale, scale)
+        gl.glScaled(scale, scale, scale)
 
-        glTranslated(-self.app.model.bbox.cx(), -self.app.model.bbox.cy(), -self.app.model.bbox.cz())
-
-
+        gl.glTranslated(-self.app.model.bbox.cx(), -self.app.model.bbox.cy(), -self.app.model.bbox.cz())
 
         # draw axes
-        glBegin(GL_LINES)
-        glColor3f(1,0,0)
-        glVertex3f(0,0,0); glVertex3f(1,0,0); glVertex3f(1,0,0); glVertex3f(1,0.1,0)
-        glVertex3f(1,0,0); glVertex3f(self.app.model.bbox.xmax,0,0)
-        glColor3f(0,1,0)
-        glVertex3f(0,0,0); glVertex3f(0,1,0); glVertex3f(0,1,0); glVertex3f(0,1,0.1)
-        glVertex3f(0,1,0); glVertex3f(0,self.app.model.bbox.ymax,0)
-        glColor3f(0,0,1)
-        glVertex3f(0,0,0); glVertex3f(0,0,1); glVertex3f(0,0,1); glVertex3f(0.1,0,1)
-        glVertex3f(0,0,1); glVertex3f(0,0,self.app.model.bbox.zmax)
-        glEnd()
+        gl.glBegin(gl.GL_LINES)
+        gl.glColor3f(1, 0, 0)
+        gl.glVertex3f(0, 0, 0)
+        gl.glVertex3f(1, 0, 0)
+        gl.glVertex3f(1, 0, 0)
+        gl.glVertex3f(1, 0.1, 0)
 
+        gl.glVertex3f(1, 0, 0)
+        gl.glVertex3f(self.app.model.bbox.xmax, 0, 0)
 
-        glLineWidth(1)
+        gl.glColor3f(0, 1, 0)
+        gl.glVertex3f(0, 0, 0)
+        gl.glVertex3f(0, 1, 0)
+        gl.glVertex3f(0, 1, 0)
+        gl.glVertex3f(0, 1, 0.1)
+
+        gl.glVertex3f(0, 1, 0)
+        gl.glVertex3f(0, self.app.model.bbox.ymax, 0)
+
+        gl.glColor3f(0, 0, 1)
+        gl.glVertex3f(0, 0, 0)
+        gl.glVertex3f(0, 0, 1)
+        gl.glVertex3f(0, 0, 1)
+        gl.glVertex3f(0.1, 0, 1)
+
+        gl.glVertex3f(0, 0, 1)
+        gl.glVertex3f(0, 0, self.app.model.bbox.zmax)
+
+        gl.glEnd()
+
+        gl.glLineWidth(1)
         # Draw the model layers
         # lower layers
+        # print(type(self.app.graphics_old), type(self.app.layerIdx))
         for graphic in self.app.graphics_old[0:self.app.layerIdx]:
-            graphic.draw(GL_LINES)
+            graphic.draw(gl.GL_LINES)
 
-        glLineWidth(2)
+        gl.glLineWidth(2)
 
         # highlighted layer
         graphic = self.app.graphics_current[self.app.layerIdx]
-        graphic.draw(GL_LINES)
+        graphic.draw(gl.GL_LINES)
 
-        glLineWidth(1)
+        gl.glLineWidth(1)
         # limbo layers
-        for graphic in self.app.graphics_limbo[self.app.layerIdx+1:]:
-            graphic.draw(GL_LINES)
-
+        for graphic in self.app.graphics_limbo[self.app.layerIdx + 1:]:
+            graphic.draw(gl.GL_LINES)
 
         # disable depth for HUD
-        glDisable(GL_DEPTH_TEST)
-        glDepthMask(0)
+        gl.glDisable(gl.GL_DEPTH_TEST)
+        gl.glDepthMask(0)
 
-        #Set your camera up for 2d, draw 2d scene
+        # Set your camera up for 2d, draw 2d scene
 
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity();
-        glOrtho(0, self.width, 0, self.height, -1, 1)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
+        gl.glOrtho(0, self.width, 0, self.height, -1, 1)
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+        gl.glLoadIdentity()
 
-        self.fpsLabel.text = "%d fps"%int(round(pyglet.clock.get_fps()))
+        self.fpsLabel.text = "%d fps" % int(round(pyglet.clock.get_fps()))
 
         for label in self.blLabels:
             label.draw()
@@ -497,7 +504,8 @@ class MyWindow(pyglet.window.Window):
             label.draw()
 
         # reenable depth for next model display
-        glEnable(GL_DEPTH_TEST)
-        glDepthMask(1)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glDepthMask(1)
+
 
 App().main()
