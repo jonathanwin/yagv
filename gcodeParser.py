@@ -100,10 +100,10 @@ class GcodeParser:
 		self.model.do_G92(self.parseArgs(args))
 
 	def warn(self, msg):
-		print "[WARN] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line)
+		print("[WARN] Line {}: {} (Text:'{}')".format(self.lineNb, msg, self.line))
 
 	def error(self, msg):
-		print "[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line)
+		print("[ERROR] Line {}: {} (Text:'{}')".format(self.lineNb, msg, self.line))
 		raise Exception("[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line))
 
 class BBox(object):
@@ -425,4 +425,4 @@ if __name__ == '__main__':
 	parser = GcodeParser()
 	model = parser.parseFile(path)
 
-	print model
+	print(model)
