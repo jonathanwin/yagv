@@ -16,6 +16,7 @@ from pyglet.window import mouse
 from gcodeParser import *
 import os.path
 import time
+import json
 
 class App:
 	def __init__(self):
@@ -39,6 +40,7 @@ class App:
 			# default to hana
 			path = os.path.join(script_dir, "data/hana_swimsuit_fv_solid_v1.gcode")
 
+		self.file = path
 		self.load(path)
 
 		# default to the middle layer
@@ -48,6 +50,8 @@ class App:
 
 		# debug: log all events
 		# self.window.push_handlers(pyglet.window.event.WindowEventLogger())
+
+		self.WriteInfo()
 
 
 		pyglet.app.run()
@@ -277,6 +281,15 @@ class App:
 		self.layerDragStartLayer = None
 		self.layerDragStartX = None
 		self.layerDragStartY = None
+
+	def WriteInfo(self):
+		info = {'file': os.path.basename(self.file)}
+		info['cog'] = self.model.cog
+		info['stl_cog'] = self.model.stl_cog
+		info['slicer_translation'] = self.model.slicer_translation
+
+		with open(self.file.replace('.gcode', '.json'), 'w') as outfile:
+			json.dump(info, outfile, indent=4, sort_keys=True)
 
 
 class MyWindow(pyglet.window.Window):

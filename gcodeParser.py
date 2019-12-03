@@ -32,6 +32,11 @@ class GcodeParser:
 		## then semicolons
 		idx = command.find(';')
 		if idx >= 0:
+			idxe = command.find('=')
+			if idxe > 0:
+				var = command.replace(' ', '').replace(';', '').split('=')
+				self.model.add_variable(var[0], var[1])
+
 			command = command[0:idx].strip()
 		## detect unterminated round bracket comments, just in case
 		idx = command.find('(')
@@ -144,6 +149,7 @@ class GcodeModel:
 	def __init__(self, parser):
 		# save parser for messages
 		self.parser = parser
+		self.variables = {}
 		# latest coordinates & extrusion relative to offset, feedrate
 		self.relative = {
 			"X":0.0,
@@ -165,6 +171,9 @@ class GcodeModel:
 		self.distance = None
 		self.extrudate = None
 		self.bbox = None
+
+	def add_variable(self, name, value):
+		self.variables[name] = value
 
 	def do_G1(self, args, type):
 		# G0/G1: Rapid/Controlled move
@@ -337,6 +346,20 @@ class GcodeModel:
 			"Y":0.0,
 			"Z":0.0}
 
+		self.stl_cog = {
+			"X":0.0,
+			"Y":0.0,
+			"Z":0.0}
+
+		plate_size = self.variables.get('bed_shape', '0,0,200x200,0').split(',')[2].split('x')
+
+		self.slicer_translation = {
+			"X": float(plate_size[0])/2 - (float(self.variables.get('stl_min_x', 0))+float(self.variables.get('stl_max_x', 0)))/2,
+			"Y": float(plate_size[1])/2 - (float(self.variables.get('stl_min_y', 0))+float(self.variables.get('stl_max_y', 0)))/2,
+			"Z": -float(self.variables.get('stl_min_z', 0))
+		}
+
+
 		# for all layers
 		for layer in self.layers:
 			# start at layer start
@@ -387,13 +410,17 @@ class GcodeModel:
 		self.cog['Y'] /= self.extrudate
 		self.cog['Z'] /= self.extrudate
 
+		self.stl_cog['X'] = self.cog['X'] - self.slicer_translation['X']
+		self.stl_cog['Y'] = self.cog['Y'] - self.slicer_translation['Y']
+		self.stl_cog['Z'] = self.cog['Z'] - self.slicer_translation['Z']
+
 	def postProcess(self):
 		self.classifySegments()
 		self.splitLayers()
 		self.calcMetrics()
 
 	def __str__(self):
-		return "<GcodeModel: len(segments)=%d, len(layers)=%d, distance=%f, extrudate=%f, bbox=%s, cog=%s>"%(len(self.segments), len(self.layers), self.distance, self.extrudate, self.bbox, self.cog)
+		return "<GcodeModel: len(segments)=%d, len(layers)=%d, distance=%f, extrudate=%f, bbox=%s, cog=%s, stl_cog=%s, slicer_translation=%s>"%(len(self.segments), len(self.layers), self.distance, self.extrudate, self.bbox, self.cog, self.stl_cog, self.slicer_translation)
 
 class Segment:
 	def __init__(self, type, coords, lineNb, line):
