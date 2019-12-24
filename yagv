@@ -17,7 +17,7 @@ from gcodeParser import *
 import os.path
 import time
 
-class App:
+class App(object):
 	def __init__(self):
 		self.RX = 0.0
 		self.RZ = 0.0
@@ -26,7 +26,7 @@ class App:
 	def main(self):
 		
 		#### MAIN CODE ####
-		print "Yet Another GCode Viewer v%s"%YAGV_VERSION
+		print("Yet Another GCode Viewer v%s"%YAGV_VERSION)
 
 		import sys
 		if len(sys.argv) > 1:
@@ -42,7 +42,7 @@ class App:
 		self.load(path)
 		
 		# default to the middle layer
-		self.layerIdx = len(self.model.layers)/2
+		self.layerIdx = int(len(self.model.layers) / 2)
 
 		self.window = MyWindow(self, caption="Yet Another GCode Viewer v%s"%YAGV_VERSION, resizable=True)
 
@@ -57,35 +57,35 @@ class App:
 			
 	def load(self, path):
 		
-		print "loading file %s ..."%repr(path)
+		print("loading file %s ..."%repr(path))
 		t1 = time.time()
 		
-		print
-		print "Parsing '%s'..."%path
-		print
+		print()
+		print("Parsing '%s'..."%path)
+		print()
 		
 		self.path = path
 
 		parser = GcodeParser()
 		self.model = parser.parseFile(path)
 
-		print
-		print "Done! %s"%self.model
-		print
+		print()
+		print("Done! %s"%self.model)
+		print()
 		
 		# render the model
-		print "rendering vertices..."
+		print("rendering vertices...")
 		self.renderVertices()
-		print "rendering indexed colors..."
+		print("rendering indexed colors...")
 		self.renderIndexedColors()
-		print "rendering true colors..."
+		print("rendering true colors...")
 		self.renderColors()
-		print "generating graphics..."
+		print("generating graphics...")
 		self.generateGraphics()
-		print "Done"
+		print("Done")
 		
 		t2 = time.time()
-		print "loaded file in %0.3f ms" % ((t2-t1)*1000.0, )
+		print("loaded file in %0.3f ms" % ((t2-t1)*1000.0, ))
 	
 	def renderVertices(self):
 		t1 = time.time()
@@ -113,7 +113,7 @@ class App:
 			self.vertices.append(layer_vertices)
 			
 		t2 = time.time()
-		print "end renderColors in %0.3f ms" % ((t2-t1)*1000.0, )
+		print("end renderColors in %0.3f ms" % ((t2-t1)*1000.0, ))
 	
 	def renderIndexedColors(self):
 		t1 = time.time()
@@ -142,7 +142,7 @@ class App:
 			# append layer to all layers
 			self.vertex_indexed_colors.append(layer_vertex_indexed_colors)
 		t2 = time.time()
-		print "end renderIndexedColors in %0.3f ms" % ((t2-t1)*1000.0, )
+		print("end renderIndexedColors in %0.3f ms" % ((t2-t1)*1000.0, ))
 	
 	def renderColors(self):
 		t1 = time.time()
@@ -160,7 +160,7 @@ class App:
 				]
 		
 		# for all 3 types
-		for display_type in xrange(3):
+		for display_type in range(3):
 			
 			type_color_map = colorMap[display_type]
 			
@@ -168,16 +168,16 @@ class App:
 			for indexes in self.vertex_indexed_colors:
 				
 				# render color indexes to colors
-				colors = map(lambda e: type_color_map[e], indexes)
+				colors = [type_color_map[e] for e in indexes]
 				# flatten color values
 				fcolors = []
-				map(fcolors.extend, colors)
+				list(map(fcolors.extend, colors))
 				
 				# push colors to vertex list
 				self.vertex_colors[display_type].append(fcolors)
 				
 		t2 = time.time()
-		print "end renderColors in %0.3f ms" % ((t2-t1)*1000.0, )
+		print("end renderColors in %0.3f ms" % ((t2-t1)*1000.0, ))
 	
 	def generateGraphics(self):
 		t1 = time.time()
@@ -186,8 +186,8 @@ class App:
 		self.graphics_current = []
 		self.graphics_limbo = []
 		
-		for layer_idx in xrange(len(self.vertices)):
-			nb_layer_vertices = len(self.vertices[layer_idx])/3
+		for layer_idx in range(len(self.vertices)):
+			nb_layer_vertices = int(len(self.vertices[layer_idx])/3)
 			vertex_list = pyglet.graphics.vertex_list(nb_layer_vertices,
 				('v3f/static', self.vertices[layer_idx]),
 				('c4B/static', self.vertex_colors[0][layer_idx])
@@ -208,7 +208,7 @@ class App:
 		#	print nb_layer_vertices, len(self.vertices[layer_idx]), len(self.colors[0][layer_idx])
 		
 		t2 = time.time()
-		print "end generateGraphics in %0.3f ms" % ((t2-t1)*1000.0, )
+		print("end generateGraphics in %0.3f ms" % ((t2-t1)*1000.0, ))
 		
 		
 	def rotate_drag_start(self, x, y, button, modifiers):
@@ -358,7 +358,7 @@ class MyWindow(pyglet.window.Window):
 			self.app.layer_drag_end(x, y, button, modifiers)
 
 	def on_key_release(self, symbol, modifiers):
-		print "pressed key: %s, mod: %s"%(symbol, modifiers)
+		print("pressed key: %s, mod: %s"%(symbol, modifiers))
 		#print "pressed key: %s, mod: %s"%(pyglet.window.key.R, pyglet.window.key.MOD_CTRL)
 		if symbol==pyglet.window.key.R and modifiers & pyglet.window.key.MOD_CTRL:
 			self.app.reload()

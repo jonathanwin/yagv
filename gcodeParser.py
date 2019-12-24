@@ -3,7 +3,7 @@
 import math
 import re
 
-class GcodeParser:
+class GcodeParser(object):
 	
 	def __init__(self):
 		self.model = GcodeModel(self)
@@ -100,10 +100,10 @@ class GcodeParser:
 		self.model.do_G92(self.parseArgs(args))
 		
 	def warn(self, msg):
-		print "[WARN] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line)
+		print("[WARN] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line))
 		
 	def error(self, msg):
-		print "[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line)
+		print("[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line))
 		raise Exception("[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line))
 
 class BBox(object):
@@ -139,7 +139,7 @@ class BBox(object):
 		self.zmin = min(self.zmin, coords["Z"])
 		self.zmax = max(self.zmax, coords["Z"])
 		
-class GcodeModel:
+class GcodeModel(object):
 	
 	def __init__(self, parser):
 		# save parser for messages
@@ -172,7 +172,7 @@ class GcodeModel:
 		coords = dict(self.relative)
 		# update changed coords
 		for axis in args.keys():
-			if coords.has_key(axis):
+			if axis in coords:
 				if self.isRelative:
 					coords[axis] += args[axis]
 				else:
@@ -205,11 +205,11 @@ class GcodeModel:
 		# this changes the current coords, without moving, so do not generate a segment
 		
 		# no axes mentioned == all axes to 0
-		if not len(args.keys()):
+		if not args:
 			args = {"X":0.0, "Y":0.0, "Z":0.0, "E":0.0}
 		# update specified axes
 		for axis in args.keys():
-			if self.offset.has_key(axis):
+			if axis in self.offset:
 				# transfer value from relative to offset
 				self.offset[axis] += self.relative[axis] - args[axis]
 				self.relative[axis] = args[axis]
@@ -376,7 +376,7 @@ class GcodeModel:
 	def __str__(self):
 		return "<GcodeModel: len(segments)=%d, len(layers)=%d, distance=%f, extrudate=%f, bbox=%s>"%(len(self.segments), len(self.layers), self.distance, self.extrudate, self.bbox)
 	
-class Segment:
+class Segment(object):
 	def __init__(self, type, coords, lineNb, line):
 		self.type = type
 		self.coords = coords
@@ -389,7 +389,7 @@ class Segment:
 	def __str__(self):
 		return "<Segment: type=%s, lineNb=%d, style=%s, layerIdx=%d, distance=%f, extrudate=%f>"%(self.type, self.lineNb, self.style, self.layerIdx, self.distance, self.extrudate)
 		
-class Layer:
+class Layer(object):
 	def __init__(self, Z):
 		self.Z = Z
 		self.segments = []
@@ -406,4 +406,4 @@ if __name__ == '__main__':
 	parser = GcodeParser()
 	model = parser.parseFile(path)
 
-	print model
+	print(model)
