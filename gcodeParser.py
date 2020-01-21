@@ -388,27 +388,32 @@ class GcodeModel:
 				seg.extrudate = (seg.coords["E"]-coords["E"])
 
 				# calc center of gravity
-				self.cog['X'] += (seg.coords["X"]+coords["X"])/2*seg.extrudate
-				self.cog['Y'] += (seg.coords["Y"]+coords["Y"])/2*seg.extrudate
-				self.cog['Z'] += (seg.coords["Z"]+coords["Z"])/2*seg.extrudate
+				if  abs(seg.extrudate) != 2:
+					self.cog['X'] += (seg.coords["X"]+coords["X"])/2*seg.extrudate
+					self.cog['Y'] += (seg.coords["Y"]+coords["Y"])/2*seg.extrudate
+					self.cog['Z'] += (seg.coords["Z"]+coords["Z"])/2*seg.extrudate
 
-				# accumulate layer metrics
-				layer.distance += seg.distance
-				layer.extrudate += seg.extrudate
+					print(seg.coords["X"], coords["X"],  (seg.coords["X"]+coords["X"])/2, seg.extrudate)
 
-				# execute segment
-				coords = seg.coords
+					# accumulate layer metrics
+					layer.distance += seg.distance
+					layer.extrudate += seg.extrudate
 
-				# include end point
-				extend(self.bbox, coords)
+					# execute segment
+					coords = seg.coords
+
+					# include end point
+					extend(self.bbox, coords)
+				else:
+					print("RETRAKCE", seg.extrudate)
 
 			# accumulate total metrics
 			self.distance += layer.distance
 			self.extrudate += layer.extrudate
 
-		self.cog['X'] /= self.extrudate
-		self.cog['Y'] /= self.extrudate
-		self.cog['Z'] /= self.extrudate
+		self.cog['X'] /= (self.extrudate)
+		self.cog['Y'] /= (self.extrudate)
+		self.cog['Z'] /= (self.extrudate)
 
 		self.stl_cog['X'] = self.cog['X'] - self.slicer_translation['X']
 		self.stl_cog['Y'] = self.cog['Y'] - self.slicer_translation['Y']
