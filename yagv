@@ -44,7 +44,7 @@ class App:
 		self.load(path)
 		
 		# default to the middle layer
-		self.layerIdx = len(self.model.layers)/2
+		self.layerIdx = int(len(self.model.layers)/2)
 
 		self.window = MyWindow(self, caption="Yet Another GCode Viewer v%s"%YAGV_VERSION, resizable=True, width=1024, height=768)
 
@@ -192,7 +192,7 @@ class App:
 		self.graphics_limbo = []
 
 		for layer_idx in xrange(len(self.vertices)):
-			nb_layer_vertices = len(self.vertices[layer_idx])/3
+			nb_layer_vertices = int(len(self.vertices[layer_idx])/3)
 			vertex_list = pyglet.graphics.vertex_list(nb_layer_vertices,
 				('v3f/static', self.vertices[layer_idx]),
 				('c4B/static', self.vertex_colors[0][layer_idx])
