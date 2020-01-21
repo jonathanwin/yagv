@@ -42,11 +42,11 @@ class App:
 
 		self.file = path
 		self.load(path)
-
+		
 		# default to the middle layer
 		self.layerIdx = len(self.model.layers)/2
 
-		self.window = MyWindow(self, caption="Yet Another GCode Viewer v%s"%YAGV_VERSION, resizable=True)
+		self.window = MyWindow(self, caption="Yet Another GCode Viewer v%s"%YAGV_VERSION, resizable=True, width=1024, height=768)
 
 		# debug: log all events
 		# self.window.push_handlers(pyglet.window.event.WindowEventLogger())
@@ -58,7 +58,7 @@ class App:
 
 	def reload(self):
 		self.load(self.path)
-
+			
 	def load(self, path):
 
 		print("loading file {} ...".format(repr(path)))
@@ -276,6 +276,21 @@ class App:
 	#		self.layerDragStartX = x
 	#		self.layerDragStartY = y
 
+	def layer_up(self):
+		self.layerIdx = max(min(self.layerIdx+1, self.model.topLayer), 0)
+		self.window.layerLabel.text = "layer %d"%self.layerIdx
+
+	def layer_down(self):
+		self.layerIdx = max(min(self.layerIdx-1, self.model.topLayer), 0)
+		self.window.layerLabel.text = "layer %d"%self.layerIdx
+
+	def layer_bottom(self):
+		self.layerIdx = min(1, self.model.topLayer)
+		self.window.layerLabel.text = "layer %d"%self.layerIdx
+
+	def layer_top(self):
+		self.layerIdx = self.model.topLayer
+		self.window.layerLabel.text = "layer %d"%self.layerIdx
 
 	def layer_drag_end(self, x, y, button, modifiers):
 		self.layerDragStartLayer = None
@@ -327,7 +342,7 @@ class MyWindow(pyglet.window.Window):
 										anchor_y='top')
 		filename = os.path.basename(self.app.path)
 		self.statsLabel.text = "%s: %d segments, %d layers."%(filename, len(self.app.model.segments), len(self.app.model.layers))
-
+		
 		## fps counter
 		self.fpsLabel = pyglet.text.Label(	"",
 										font_size=12,
@@ -388,7 +403,17 @@ class MyWindow(pyglet.window.Window):
 		#print "pressed key: %s, mod: %s"%(pyglet.window.key.R, pyglet.window.key.MOD_CTRL)
 		if symbol==pyglet.window.key.R and modifiers & pyglet.window.key.MOD_CTRL:
 			self.app.reload()
-
+		elif symbol==pyglet.window.key.UP:
+			self.app.layer_up()
+		elif symbol==pyglet.window.key.DOWN:
+			self.app.layer_down()
+		elif symbol==pyglet.window.key.HOME:
+			self.app.layer_bottom()
+		elif symbol==pyglet.window.key.END:
+			self.app.layer_top()
+		else:
+			print("pressed key: %s, mod: %s"%(symbol, modifiers))
+		
 	def placeLabels(self, width, height):
 		x = 5
 		y = 5
