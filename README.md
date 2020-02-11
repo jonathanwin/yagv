@@ -4,6 +4,8 @@ A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL (via p
 
 Designed in Ubuntu Linux; Expected to work in any Linux, Windows or OS X
 
+![Screenshot](doc/img/screenshot.png)
+
 ## Requires:
 
 * python 2.x (2.7.3 tested)

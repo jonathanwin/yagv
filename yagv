@@ -40,11 +40,11 @@ class App:
             # default to hana
             path = os.path.join(script_dir, "data/hana_swimsuit_fv_solid_v1.gcode")
 
-		self.layerIdx = int(len(self.model.layers)/2)
-		# default to the middle layer
-		self.file = path
-		
-		self.load(path)
+        self.file = path
+        self.load(path)
+
+        # default to the middle layer
+        self.layerIdx = int(len(self.model.layers)/2)
 
         self.window = MyWindow(self, caption="Yet Another GCode Viewer v%s"%YAGV_VERSION, resizable=True)
 
