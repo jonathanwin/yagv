@@ -435,7 +435,14 @@ class GcodeModel:
         self.cog['Y'] /= (self.extrudate)
         self.cog['Z'] /= (self.extrudate)
 
-        if self.stl_bbox:
+        if self.variables.get('new_offset_X', None) and self.variables.get('new_offset_Y', None) and self.variables.get('new_offset_Z', None):
+            print("Pocitam na zaklade gcodu")
+            self.slicer_translation = {
+                "X": float(self.variables.get('new_offset_X', 0)),
+                "Y": float(self.variables.get('new_offset_Y', 0)),
+                "Z": float(self.variables.get('new_offset_Z', 0)),
+            }
+        elif self.stl_bbox:
             self.slicer_translation = {
                 "X": self.bbox.cx() - self.stl_bbox.cx(),
                 "Y": self.bbox.cy() - self.stl_bbox.cy(),
