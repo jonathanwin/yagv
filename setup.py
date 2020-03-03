@@ -14,7 +14,7 @@ setuptools.setup(
 
     ],
     #include_package_data = True,
-    #py_modules = ['gcodeParser'],
+    py_modules = ['gcodeParser'],
     scripts = ['yagv'],
     python_requies='>3.6'
 )
