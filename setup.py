@@ -2,7 +2,7 @@ import setuptools
 
 
 setuptools.setup(
-    name = 'yagv',
+    name = 'yagvTF',
     version = '0.4',
     package_dir = {"":'.'},
     description = '',

@@ -457,10 +457,26 @@ class GcodeModel:
         self.stl_cog['Y'] = self.cog['Y'] - self.slicer_translation['Y']
         self.stl_cog['Z'] = self.cog['Z'] - self.slicer_translation['Z']
 
+    def getMetadata(self):
+        info = {}
+        #info = {'file': os.path.basename(self.file)}
+        info['cog'] = {}
+        info['cog']['gcode'] = self.cog
+        info['cog']['model'] = self.stl_cog
+        info['cog']['slicer_translation'] = self.slicer_translation
+        info['cog']['model_method'] = None
+        info['material'] = {}
+        info['material']['extrudate'] = self.extrudate
+        info['material']['volume'] = math.pi * (float(self.variables.get('filament_diameter', 0))/2) ** 2
+        info['material']['mass'] = info['material']['volume'] * float(self.variables.get('filament_density', 0))
+        print(info)
+        return info
+
     def postProcess(self):
         self.classifySegments()
         self.splitLayers()
         self.calcMetrics()
+        self.getMetadata()
 
     def __str__(self):
         return "<GcodeModel: len(segments)=%d, len(layers)=%d, distance=%f, extrudate=%f, bbox=%s, cog=%s, stl_cog=%s, slicer_translation=%s>"%(len(self.segments), len(self.layers), self.distance, self.extrudate, self.bbox, self.cog, self.stl_cog, self.slicer_translation)
