@@ -430,10 +430,10 @@ class GcodeModel:
             self.distance += layer.distance
             self.extrudate += layer.extrudate
 
-
-        self.cog['X'] /= (self.extrudate)
-        self.cog['Y'] /= (self.extrudate)
-        self.cog['Z'] /= (self.extrudate)
+        if self.extrudate:
+            self.cog['X'] /= (self.extrudate)
+            self.cog['Y'] /= (self.extrudate)
+            self.cog['Z'] /= (self.extrudate)
 
         if self.variables.get('new_offset_X', None) and self.variables.get('new_offset_Y', None) and self.variables.get('new_offset_Z', None):
             print("Pocitam na zaklade gcodu")
