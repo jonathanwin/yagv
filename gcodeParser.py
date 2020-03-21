@@ -433,12 +433,19 @@ class GcodeModel:
             self.distance += layer.distance
             self.extrudate += layer.extrudate
 
+        if self.extrudate:
+            self.cog['X'] /= (self.extrudate)
+            self.cog['Y'] /= (self.extrudate)
+            self.cog['Z'] /= (self.extrudate)
 
-        self.cog['X'] /= (self.extrudate)
-        self.cog['Y'] /= (self.extrudate)
-        self.cog['Z'] /= (self.extrudate)
-
-        if self.stl_bbox:
+        if self.variables.get('new_offset_X', None) and self.variables.get('new_offset_Y', None) and self.variables.get('new_offset_Z', None):
+            print("Pocitam na zaklade gcodu")
+            self.slicer_translation = {
+                "X": float(self.variables.get('new_offset_X', 0)),
+                "Y": float(self.variables.get('new_offset_Y', 0)),
+                "Z": float(self.variables.get('new_offset_Z', 0)),
+            }
+        elif self.stl_bbox:
             self.slicer_translation = {
                 "X": self.bbox.cx() - self.stl_bbox.cx(),
                 "Y": self.bbox.cy() - self.stl_bbox.cy(),
@@ -453,10 +460,26 @@ class GcodeModel:
         self.stl_cog['Y'] = self.cog['Y'] - self.slicer_translation['Y']
         self.stl_cog['Z'] = self.cog['Z'] - self.slicer_translation['Z']
 
+    def getMetadata(self):
+        info = {}
+        #info = {'file': os.path.basename(self.file)}
+        info['cog'] = {}
+        info['cog']['gcode'] = self.cog
+        info['cog']['model'] = self.stl_cog
+        info['cog']['slicer_translation'] = self.slicer_translation
+        info['cog']['model_method'] = None
+        info['material'] = {}
+        info['material']['extrudate'] = self.extrudate
+        info['material']['volume'] = math.pi * (float(self.variables.get('filament_diameter', 0))/2) ** 2
+        info['material']['mass'] = info['material']['volume'] * float(self.variables.get('filament_density', 0))
+        print(info)
+        return info
+
     def postProcess(self):
         self.classifySegments()
         self.splitLayers()
         self.calcMetrics()
+        self.getMetadata()
 
     def __str__(self):
         return "<GcodeModel: len(segments)=%d, len(layers)=%d, distance=%f, extrudate=%f, bbox=%s, cog=%s, stl_cog=%s, slicer_translation=%s>"%(len(self.segments), len(self.layers), self.distance, self.extrudate, self.bbox, self.cog, self.stl_cog, self.slicer_translation)
