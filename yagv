@@ -48,7 +48,6 @@ class App:
 
         # default to the middle layer
         self.layerIdx = int(len(self.model.layers) / 2)
-
         self.window = MyWindow(self, caption="Yet Another GCode Viewer v%s" % YAGV_VERSION, resizable=True)
 
         # debug: log all events
