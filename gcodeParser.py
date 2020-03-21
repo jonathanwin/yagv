@@ -203,6 +203,9 @@ class GcodeModel:
     def add_variable(self, name, value):
         self.variables[name] = value
 
+    def get_variable(self, name, none = None):
+        return self.variables.get(name, none)
+
     def do_G1(self, args, type):
         # G0/G1: Rapid/Controlled move
         # clone previous coords
