@@ -54,8 +54,7 @@ class App:
         # debug: log all events
         # self.window.push_handlers(pyglet.window.event.WindowEventLogger())
 
-        self.WriteInfo()
-
+        #self.WriteInfo()
         pyglet.app.run()
 
     def reload(self):
