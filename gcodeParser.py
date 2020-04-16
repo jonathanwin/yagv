@@ -470,7 +470,7 @@ class GcodeModel:
         info['cog']['model_method'] = None
         info['material'] = {}
         info['material']['extrudate'] = self.extrudate
-        info['material']['volume'] = math.pi * (float(self.variables.get('filament_diameter', 0))/2) ** 2
+        info['material']['volume'] = info['material']['extrudate'] * math.pi * (float(self.variables.get('filament_diameter', 0))/2) ** 2
         info['material']['mass'] = info['material']['volume'] * float(self.variables.get('filament_density', 0))
         print(info)
         return info
