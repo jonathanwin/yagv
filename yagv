@@ -527,7 +527,21 @@ class MyWindow(pyglet.window.Window):
 
         # draw COG
         cog = self.app.model.cog
-        length = 10
+        length = 5
+        glLineWidth(5)
+        glBegin(GL_LINES)
+        glColor3f(0.8, 0, 0)
+        glVertex3f(cog['X'] - length, cog['Y'], cog['Z']);
+        glVertex3f(cog['X'] + length, cog['Y'], cog['Z'])
+        glColor3f(0, 0.8, 0)
+        glVertex3f(cog['X'], cog['Y'] - length, cog['Z']);
+        glVertex3f(cog['X'], cog['Y'] + length, cog['Z'])
+        glColor3f(0, 0, 0.8)
+        glVertex3f(cog['X'], cog['Y'], cog['Z'] - length);
+        glVertex3f(cog['X'], cog['Y'], cog['Z'] + length)
+
+        cog = self.app.model.gcode_cog
+        length = 5
         glLineWidth(5)
         glBegin(GL_LINES)
         glColor3f(0.8, 0, 0)

@@ -382,6 +382,11 @@ class GcodeModel:
             "Y":0.0,
             "Z":0.0}
 
+        self.gcode_cog = {
+            "X": float(self.variables.get('cog_x', 0)),
+            "Y": float(self.variables.get('cog_y', 0)),
+            "Z": float(self.variables.get('cog_z', 0))}
+
         plate_size = self.variables.get('bed_shape', '0,0,200x200,0').split(',')[2].split('x')
 
         # for all layers
