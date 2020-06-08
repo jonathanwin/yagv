@@ -11,7 +11,9 @@ Designed in Ubuntu Linux; Expected to work in any Linux, Windows or OS X
 * python 2.x (2.7.3 tested)
   http://python.org/
 * pyglet 1.1+ (1.1.4 tested)
-  http://www.pyglet.org
+  http://www.pyglet.org 
+  
+    sudo python3 -m pip install pyglet
 
 ## Usage:
 
