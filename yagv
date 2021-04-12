@@ -16,7 +16,7 @@ from gcodeParser import *
 import os.path
 import time
 
-c_background = [ .8,.8,.8, 1. ]
+c_background = [ 1,1,1, 1. ]
 c_pen = [ .2,.2,.2, 1 ]
 c_extrude = [ 0.,.8,0. ]
 c_extrude_active = [ .8,0.,0. ]
@@ -51,17 +51,21 @@ class App:
 			script_dir = os.path.dirname(script_path)
 			# default to hana
 			path = os.path.join(script_dir, "data/hana_swimsuit_fv_solid_v1.gcode")
-		
-		self.load(path)
-		
-		# default to the middle layer
-		self.layerIdx = len(self.model.layers)//2
 
+		self.path = "loading ..."
+
+		# -- create window soon, before loading ...
 		self.window = MyWindow(self, caption="Yet Another GCode Viewer v%s"%YAGV_VERSION, resizable=True, width=1024, height=768)
 		pyglet.gl.glClearColor(c_background[0],c_background[1],c_background[2],1)
 
 		# debug: log all events
 		# self.window.push_handlers(pyglet.window.event.WindowEventLogger())
+
+		self.load(path)
+
+		# default to the middle layer
+		self.layerIdx = len(self.model.layers)//2
+		self.window.hud()
 
 		pyglet.app.run()
 
@@ -230,13 +234,12 @@ class App:
 		t2 = time.time()
 		print("end generateGraphics in %0.3f ms" % ((t2-t1)*1000.0, ))
 		
-		
+	# -- rotate		
 	def rotate_drag_start(self, x, y, button, modifiers):
 		self.rotateDragStartRX = self.RX
 		self.rotateDragStartRZ = self.RZ
 		self.rotateDragStartX = x
 		self.rotateDragStartY = y
-
 
 	def rotate_drag_do(self, x, y, dx, dy, buttons, modifiers):
 		# deltas
@@ -246,19 +249,16 @@ class App:
 		self.RZ = self.rotateDragStartRZ + deltaX/5.0 # mouse X bound to model Z
 		self.RX = self.rotateDragStartRX + deltaY/5.0 # mouse Y bound to model X
 
-
 	def rotate_drag_end(self, x, y, button, modifiers):
 		self.rotateDragStartRX = None
 		self.rotateDragStartRZ = None
 		self.rotateDragStartX = None
 		self.rotateDragStartY = None
 
-
 	def layer_drag_start(self, x, y, button, modifiers):
 		self.layerDragStartLayer = self.layerIdx
 		self.layerDragStartX = x
 		self.layerDragStartY = y
-
 
 	def layer_drag_do(self, x, y, dx, dy, buttons, modifiers):
 		# sum x & y
@@ -267,8 +267,7 @@ class App:
 		self.layerIdx = int(self.layerDragStartLayer + delta//5)
 		# clamp layer to 0-max
 		self.layerIdx = max(min(self.layerIdx, self.model.topLayer), 0)
-		self.window.layerLabel.text = "layer %d (z=%.2f)" % (self.layerIdx,self.model.layers[self.layerIdx].start['Z'])
-
+		self.layer_update()
 		
 	#	# clamp layer to 0-max, with origin slip
 	#	if (self.layerIdx < 0):
@@ -282,27 +281,32 @@ class App:
 	#		self.layerDragStartX = x
 	#		self.layerDragStartY = y
 
+	# -- layer select		
+	def layer_update(self):
+		self.window.layerLabel.text = "layer %d (z=%.2f)" % (self.layerIdx,self.model.layers[self.layerIdx].start['Z'])
+
 	def layer_up(self):
 		self.layerIdx = max(min(self.layerIdx+1, self.model.topLayer), 0)
-		self.window.layerLabel.text = "layer %d (z=%.2f)" % (self.layerIdx,self.model.layers[self.layerIdx].start['Z'])
+		self.layer_update()
 
 	def layer_down(self):
 		self.layerIdx = max(min(self.layerIdx-1, self.model.topLayer), 0)
-		self.window.layerLabel.text = "layer %d (z=%.2f)" % (self.layerIdx,self.model.layers[self.layerIdx].start['Z'])
+		self.layer_update()
 
 	def layer_bottom(self):
 		self.layerIdx = min(1, self.model.topLayer)
-		self.window.layerLabel.text = "layer %d (z=%.2f)" % (self.layerIdx,self.model.layers[self.layerIdx].start['Z'])
+		self.layer_update()
 
 	def layer_top(self):
 		self.layerIdx = self.model.topLayer
-		self.window.layerLabel.text = "layer %d (z=%.2f)" % (self.layerIdx,self.model.layers[self.layerIdx].start['Z'])
+		self.layer_update()
 
 	def layer_drag_end(self, x, y, button, modifiers):
 		self.layerDragStartLayer = None
 		self.layerDragStartX = None
 		self.layerDragStartY = None
 
+	# -- panning
 	def panning_start(self, x, y, button, modifiers):
 		self.panningStartPX = self.PX
 		self.panningStartPY = self.PY
@@ -316,7 +320,6 @@ class App:
 		# pan!
 		self.PX = self.panningStartPX + deltaX/5.0 # mouse X bound to model X
 		self.PY = self.panningStartPY + deltaY/5.0 # mouse Y bound to model Y
-
 
 	def panning_end(self, x, y, button, modifiers):
 		self.panningStartX = None
@@ -336,7 +339,7 @@ class MyWindow(pyglet.window.Window):
 	def __init__(self, app, **kwargs):
 		pyglet.window.Window.__init__(self, **kwargs)
 		self.app = app
-		self.hud()
+		#self.hud()
 	
 	# hud info
 	def hud(self):
@@ -364,7 +367,7 @@ class MyWindow(pyglet.window.Window):
 										font_size=10,color=c_texti,
 										anchor_y='top')
 		filename = os.path.basename(self.app.path)
-		self.statsLabel.text = "%s: %d segments, %d layers."%(filename, len(self.app.model.segments), len(self.app.model.layers))
+		self.statsLabel.text = "%s: %d layers (%d segments)" % (filename, len(self.app.model.layers), len(self.app.model.segments))
 		
 		## fps counter
 		self.fpsLabel = pyglet.text.Label(	"",
@@ -540,35 +543,34 @@ class MyWindow(pyglet.window.Window):
 		glVertex3f(0,0,1); glVertex3f(0,0,self.app.model.bbox.zmax)
 		glEnd()
 		
+		# draw bed grid
 		for y in range(0,self.app.bed_size[1]+1):
 			glLine([0,y,0],[self.app.bed_size[0],y,0],[c_pen[0],c_pen[1],c_pen[2],0.3 if y%10 == 0 else 0.1])
 		for x in range(0,self.app.bed_size[0]+1):
 			glLine([x,0,0],[x,self.app.bed_size[1],0],[c_pen[0],c_pen[1],c_pen[2],0.3 if x%10 == 0 else 0.1])
 		
-		glLineWidth(1)
-		# Draw the model layers
+		# draw the model layers
+
 		# lower layers
+		glLineWidth(1)
 		for graphic in self.app.graphics_old[0:self.app.layerIdx]:
 			graphic.draw(GL_LINES)
 		
-		glLineWidth(2)
-		
 		# highlighted layer
+		glLineWidth(2)
 		graphic = self.app.graphics_current[self.app.layerIdx]
 		graphic.draw(GL_LINES)
 		
-		glLineWidth(1)
 		# limbo layers
+		glLineWidth(1)
 		for graphic in self.app.graphics_limbo[self.app.layerIdx+1:]:
 			graphic.draw(GL_LINES)
-		
 		
 		# disable depth for HUD
 		glDisable(GL_DEPTH_TEST)
 		glDepthMask(0)
 		
-		#Set your camera up for 2d, draw 2d scene
-		
+		# Set your camera up for 2d, draw 2d scene
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity();
 		glOrtho(0, self.width, 0, self.height, -1, 1)
