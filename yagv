@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-YAGV_VERSION = "0.5.0"
+YAGV_VERSION = "0.5.1"
 
 import pyglet
 
@@ -23,6 +23,7 @@ class App:
 		self.PX = 0.0
 		self.PY = 0.0
 		self.zoom = 1.0
+		self.bed_size = [ 200, 200 ]
 	
 	def main(self):
 		
@@ -299,6 +300,13 @@ class App:
 		self.panningStartY = None
 
 
+def glLine(p1,p2,c):
+	glBegin(GL_LINES)
+	glColor4f(c[0],c[1],c[2],c[3])
+	glVertex3f(p1[0],p1[1],p1[2])
+	glVertex3f(p2[0],p2[1],p2[2])
+	glEnd()
+	
 class MyWindow(pyglet.window.Window):
 
 	# constructor
@@ -507,6 +515,10 @@ class MyWindow(pyglet.window.Window):
 		glVertex3f(0,0,1); glVertex3f(0,0,self.app.model.bbox.zmax)
 		glEnd()
 		
+		for y in range(0,self.app.bed_size[1]+1):
+			glLine([0,y,0],[self.app.bed_size[0],y,0],[1,1,1,0.3 if y%10 == 0 else 0.1])
+		for x in range(0,self.app.bed_size[0]+1):
+			glLine([x,0,0],[x,self.app.bed_size[1],0],[1,1,1,0.3 if x%10 == 0 else 0.1])
 		
 		glLineWidth(1)
 		# Draw the model layers
