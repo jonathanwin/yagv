@@ -2,7 +2,9 @@
 
 A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL (via pyglet)
 
-Designed in Ubuntu Linux; Expected to work in any Linux, Windows or OS X
+Designed in Ubuntu Linux 20.04 LTS; Expected to work in any Linux, Windows or OS X
+
+![Screenshot](img/screenshot.png)
 
 ## Requires:
 
@@ -10,6 +12,13 @@ Designed in Ubuntu Linux; Expected to work in any Linux, Windows or OS X
   http://python.org/
 * pyglet 1.1+ (1.1.4 tested)
   http://www.pyglet.org
+
+## Install:
+```
+% python3 setup.py install
+ - OR -
+% sudo python3 setup.py install
+```
 
 ## Usage:
 
