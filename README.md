@@ -20,9 +20,9 @@ A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL (via p
 ```
 % yagv [file.gcode]
 ```
-By default, open `data/hana_swimsuit_fv_solid_v1.gcode` if no file specified
+By default, opens `data/hana_swimsuit_fv_solid_v1.gcode` if no file specified
 
-## Features:
+## Features
 
 * Colors segments according to their type:
   * extruding
