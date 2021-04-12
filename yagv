@@ -291,8 +291,8 @@ class App:
 		deltaX = x - self.panningStartX
 		deltaY = y - self.panningStartY
 		# pan!
-		self.PX = self.panningStartPX + deltaX/20.0 # mouse X bound to model X
-		self.PY = self.panningStartPY + deltaY/20.0 # mouse Y bound to model Y
+		self.PX = self.panningStartPX + deltaX/5.0 # mouse X bound to model X
+		self.PY = self.panningStartPY + deltaY/5.0 # mouse Y bound to model Y
 
 
 	def panning_end(self, x, y, button, modifiers):
@@ -481,9 +481,6 @@ class MyWindow(pyglet.window.Window):
 		# rotate axes to match reprap style
 		glRotated(-90, 1,0,0)
 
-		# user pan model
-		glTranslated(self.app.PX,self.app.PY,0)
-
 		# user rotate model
 		glRotated(-self.app.RX, 1,0,0)
 		glRotated(self.app.RZ, 0,0,1)
@@ -502,6 +499,9 @@ class MyWindow(pyglet.window.Window):
 		
 		glTranslated(-self.app.model.bbox.cx(), -self.app.model.bbox.cy(), -self.app.model.bbox.cz())
 		
+		# user pan model
+		glTranslated(self.app.PX,self.app.PY,0)
+
 		# draw axes
 		glBegin(GL_LINES)
 		glColor3f(1,0,0)
