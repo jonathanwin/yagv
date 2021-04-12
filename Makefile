@@ -1,5 +1,5 @@
 APPNAME = yagv
-VERSION = 0.5.0
+VERSION = 0.5.1
 
 all::
 	@echo "make install deinstall"
