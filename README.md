@@ -1,4 +1,4 @@
-# yagv - Yet Another Gcode Viewer, v0.4
+# yagv - Yet Another Gcode Viewer, v0.5.0
 
 A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL (via pyglet)
 
@@ -6,7 +6,7 @@ Designed in Ubuntu Linux; Expected to work in any Linux, Windows or OS X
 
 ## Requires:
 
-* python 2.x (2.7.3 tested)
+* ~~python 2.x (2.7.3 tested)~~ python 3.x (3.8.5 tested)
   http://python.org/
 * pyglet 1.1+ (1.1.4 tested)
   http://www.pyglet.org
@@ -26,11 +26,11 @@ yagv [file.gcode]
 * Allows displaying layers independently to examine them.
 * Automagically splits the gcode into layers.
 * Automatic scaling to fit the window.
-* Zoom and rotation (Panning planned).
+* Zoom, panning and rotation
 
 ## Issues:
 
-* Panning for close inspection not yet supported.
+* ~~Panning for close inspection not yet supported.~~ done with 0.5.0
 * Retract/restore detected but invisible (0-length segments).
 * Designed with Slic3r output in mind, may not support other slicing programs (suggestions/patches welcome).
 * Some gcodes unsupported, in particular:

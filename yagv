@@ -310,19 +310,19 @@ class MyWindow(pyglet.window.Window):
 		for txt in self.helpText:
 			self.blLabels.append(
 				pyglet.text.Label(	txt,
-									font_size=12) )
+									font_size=10) )
 
 		# statistics
 		## model stats
 		self.statsLabel = pyglet.text.Label(	"",
-										font_size=12,
+										font_size=10,
 										anchor_y='top')
 		filename = os.path.basename(self.app.path)
 		self.statsLabel.text = "%s: %d segments, %d layers."%(filename, len(self.app.model.segments), len(self.app.model.layers))
 		
 		## fps counter
 		self.fpsLabel = pyglet.text.Label(	"",
-										font_size=12,
+										font_size=10,
 										anchor_y='top')
 		self.tlLabels.append(self.statsLabel)
 		#self.tlLabels.append(self.fpsLabel)
@@ -330,7 +330,7 @@ class MyWindow(pyglet.window.Window):
 		# status
 		## current Layer
 		self.layerLabel = pyglet.text.Label(	"layer %d"%self.app.layerIdx,
-										font_size=12,
+										font_size=10,
 										anchor_x='right', anchor_y='top')
 		self.trLabels.append(self.layerLabel)
 
@@ -469,8 +469,6 @@ class MyWindow(pyglet.window.Window):
 		glScaled(scale, scale, scale)
 		
 		glTranslated(-self.app.model.bbox.cx(), -self.app.model.bbox.cy(), -self.app.model.bbox.cz())
-		
-		
 		
 		# draw axes
 		glBegin(GL_LINES)
