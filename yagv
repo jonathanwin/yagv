@@ -367,7 +367,7 @@ class MyWindow(pyglet.window.Window):
 										font_size=10,color=c_texti,
 										anchor_y='top')
 		filename = os.path.basename(self.app.path)
-		self.statsLabel.text = "%s: %d layers (%d segments)" % (filename, len(self.app.model.layers), len(self.app.model.segments))
+		self.statsLabel.text = "%s: %d layers (%d segments), %.1fm filament" % (filename, len(self.app.model.layers), len(self.app.model.segments), self.app.model.extrudate/1000.0)
 		
 		## fps counter
 		self.fpsLabel = pyglet.text.Label(	"",
