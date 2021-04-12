@@ -161,7 +161,7 @@ class App:
 		# render color index to real colors
 		colorMap = [
 				# 0: old layer
-				[ [ c_extrude[0],c_extrude[1],c_extrude[2],.8 ], [ c_motion[0],c_motion[1],c_motion[2],.3 ], 
+				[ [ c_extrude[0],c_extrude[1],c_extrude[2],.5 ], [ c_motion[0],c_motion[1],c_motion[2],.3 ], 
 				  [c_retract[0],c_retract[1],c_retract[2], .3], [c_unretract[0],c_unretract[1],c_unretract[2], .3] ],
 				# 1: current layer
 				[ [ c_extrude_active[0],c_extrude_active[1],c_extrude_active[2],1 ], [ c_motion[0],c_motion[1],c_motion[2],.3 ], 
