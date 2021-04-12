@@ -16,6 +16,15 @@ from gcodeParser import *
 import os.path
 import time
 
+c_background = [ .8,.8,.8, 1. ]
+c_pen = [ .2,.2,.2, 1 ]
+c_extrude = [ 0.,.8,0. ]
+c_extrude_active = [ .8,0.,0. ]
+c_motion = [ 0.,0.,1. ]
+c_text = [ 0,0,0, 1]
+
+c_texti = list(map(lambda x: int(x*255), c_text))
+
 class App:
 	def __init__(self):
 		self.RX = 0.0
@@ -47,10 +56,10 @@ class App:
 		self.layerIdx = len(self.model.layers)//2
 
 		self.window = MyWindow(self, caption="Yet Another GCode Viewer v%s"%YAGV_VERSION, resizable=True, width=1024, height=768)
+		pyglet.gl.glClearColor(c_background[0],c_background[1],c_background[2],1)
 
 		# debug: log all events
 		# self.window.push_handlers(pyglet.window.event.WindowEventLogger())
-		
 
 		pyglet.app.run()
 
@@ -150,17 +159,25 @@ class App:
 		# render color index to real colors
 		colorMap = [
 				# 0: old layer
-				[[255,255,255, 40],[255,  0,  0, 20],[  0,  255,  0, 32],[  0,  0,  255, 32]], # extrude, fly, retract, restore
+				[ [ c_extrude[0],c_extrude[1],c_extrude[2],1 ], [ c_motion[0],c_motion[1],c_motion[2],.3 ], [ 0,0,1, 0.1], [1,0,1, 0.1] ],
 				# 1: current layer
-				[[255,255,255,255],[255,  0,  0,128],[  0,  255,  0,128],[  0,  0,  255,128]], # extrude, fly, retract, restore
+				[ [ c_extrude_active[0],c_extrude_active[1],c_extrude_active[2],1 ], [ c_motion[0],c_motion[1],c_motion[2],.3 ], [ 0,0,1, 0.1], [1,0,1, 0.1] ],
 				# 2: limbo layer
-				[[255,255,255, 10],[255,  0,  0, 10],[  0,  255,  0, 10],[  0,  0,  255, 10]] # extrude, fly, retract, restore
+				[ [ c_extrude[0],c_extrude[1],c_extrude[2],.1 ], [ c_motion[0],c_motion[1],c_motion[2],.1 ], [ 0,0,1, 0.1], [1,0,1, 0.1] ]
 				]
 		
 		# for all 3 types
 		for display_type in range(3):
 			
-			type_color_map = colorMap[display_type]
+			#type_color_map = colorMap[display_type])
+
+			type_color_map = []
+			n = 0
+			for c in colorMap[display_type]:
+				type_color_map.append([])
+				for i in range(4):
+					type_color_map[n].append(int(c[i]*255))
+				n += 1
 			
 			# for all preindexed layer colors
 			for indexes in self.vertex_indexed_colors:
@@ -324,7 +341,7 @@ class MyWindow(pyglet.window.Window):
 		self.tlLabels = []
 		self.trLabels = []
 
-		self.brLabels.append(pyglet.text.Label("yagv "+YAGV_VERSION,font_size=10,anchor_x='right', anchor_y='bottom'))
+		self.brLabels.append(pyglet.text.Label("yagv "+YAGV_VERSION,font_size=10,color=c_texti,anchor_x='right', anchor_y='bottom'))
       
 		# help
 		self.helpText = [
@@ -333,19 +350,19 @@ class MyWindow(pyglet.window.Window):
 		for txt in self.helpText:
 			self.blLabels.append(
 				pyglet.text.Label(	txt,
-									font_size=10) )
+									font_size=10,color=c_texti) )
 
 		# statistics
 		## model stats
 		self.statsLabel = pyglet.text.Label(	"",
-										font_size=10,
+										font_size=10,color=c_texti,
 										anchor_y='top')
 		filename = os.path.basename(self.app.path)
 		self.statsLabel.text = "%s: %d segments, %d layers."%(filename, len(self.app.model.segments), len(self.app.model.layers))
 		
 		## fps counter
 		self.fpsLabel = pyglet.text.Label(	"",
-										font_size=10,
+										font_size=10,color=c_texti,
 										anchor_y='top')
 		self.tlLabels.append(self.statsLabel)
 		#self.tlLabels.append(self.fpsLabel)
@@ -353,7 +370,7 @@ class MyWindow(pyglet.window.Window):
 		# status
 		## current Layer
 		self.layerLabel = pyglet.text.Label(	"layer %d"%self.app.layerIdx,
-										font_size=10,
+										font_size=10,color=c_texti,
 										anchor_x='right', anchor_y='top')
 		self.trLabels.append(self.layerLabel)
 
@@ -518,9 +535,9 @@ class MyWindow(pyglet.window.Window):
 		glEnd()
 		
 		for y in range(0,self.app.bed_size[1]+1):
-			glLine([0,y,0],[self.app.bed_size[0],y,0],[1,1,1,0.3 if y%10 == 0 else 0.1])
+			glLine([0,y,0],[self.app.bed_size[0],y,0],[c_pen[0],c_pen[1],c_pen[2],0.3 if y%10 == 0 else 0.1])
 		for x in range(0,self.app.bed_size[0]+1):
-			glLine([x,0,0],[x,self.app.bed_size[1],0],[1,1,1,0.3 if x%10 == 0 else 0.1])
+			glLine([x,0,0],[x,self.app.bed_size[1],0],[c_pen[0],c_pen[1],c_pen[2],0.3 if x%10 == 0 else 0.1])
 		
 		glLineWidth(1)
 		# Draw the model layers
