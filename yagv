@@ -1,12 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 
-YAGV_VERSION = "0.4"
+YAGV_VERSION = "0.5.0"
 
 import pyglet
 
 # Disable error checking for increased performance
 pyglet.options['debug_gl'] = False
-
 
 from pyglet import clock
 from pyglet.gl import *
@@ -21,12 +20,14 @@ class App:
 	def __init__(self):
 		self.RX = 0.0
 		self.RZ = 0.0
+		self.PX = 0.0
+		self.PY = 0.0
 		self.zoom = 1.0
 	
 	def main(self):
 		
 		#### MAIN CODE ####
-		print "Yet Another GCode Viewer v%s"%YAGV_VERSION
+		print("Yet Another GCode Viewer v%s"%YAGV_VERSION)
 
 		import sys
 		if len(sys.argv) > 1:
@@ -42,7 +43,7 @@ class App:
 		self.load(path)
 		
 		# default to the middle layer
-		self.layerIdx = len(self.model.layers)/2
+		self.layerIdx = len(self.model.layers)//2
 
 		self.window = MyWindow(self, caption="Yet Another GCode Viewer v%s"%YAGV_VERSION, resizable=True)
 
@@ -57,35 +58,31 @@ class App:
 			
 	def load(self, path):
 		
-		print "loading file %s ..."%repr(path)
+		print("loading file %s ..."%repr(path))
 		t1 = time.time()
 		
-		print
-		print "Parsing '%s'..."%path
-		print
+		print("Parsing '%s'..."%path)
 		
 		self.path = path
 
 		parser = GcodeParser()
 		self.model = parser.parseFile(path)
 
-		print
-		print "Done! %s"%self.model
-		print
+		print("Done! %s"%self.model)
 		
 		# render the model
-		print "rendering vertices..."
+		print("rendering vertices...")
 		self.renderVertices()
-		print "rendering indexed colors..."
+		print("rendering indexed colors...")
 		self.renderIndexedColors()
-		print "rendering true colors..."
+		print("rendering true colors...")
 		self.renderColors()
-		print "generating graphics..."
+		print("generating graphics...")
 		self.generateGraphics()
-		print "Done"
+		print("Done")
 		
 		t2 = time.time()
-		print "loaded file in %0.3f ms" % ((t2-t1)*1000.0, )
+		print("loaded file in %0.3f ms" % ((t2-t1)*1000.0 ))
 	
 	def renderVertices(self):
 		t1 = time.time()
@@ -113,7 +110,7 @@ class App:
 			self.vertices.append(layer_vertices)
 			
 		t2 = time.time()
-		print "end renderColors in %0.3f ms" % ((t2-t1)*1000.0, )
+		print("end renderColors in %0.3f ms" % ((t2-t1)*1000.0, ))
 	
 	def renderIndexedColors(self):
 		t1 = time.time()
@@ -142,7 +139,7 @@ class App:
 			# append layer to all layers
 			self.vertex_indexed_colors.append(layer_vertex_indexed_colors)
 		t2 = time.time()
-		print "end renderIndexedColors in %0.3f ms" % ((t2-t1)*1000.0, )
+		print("end renderIndexedColors in %0.3f ms" % ((t2-t1)*1000.0, ))
 	
 	def renderColors(self):
 		t1 = time.time()
@@ -160,7 +157,7 @@ class App:
 				]
 		
 		# for all 3 types
-		for display_type in xrange(3):
+		for display_type in range(3):
 			
 			type_color_map = colorMap[display_type]
 			
@@ -168,16 +165,16 @@ class App:
 			for indexes in self.vertex_indexed_colors:
 				
 				# render color indexes to colors
-				colors = map(lambda e: type_color_map[e], indexes)
+				colors = list(map(lambda e: type_color_map[e], indexes))
 				# flatten color values
 				fcolors = []
-				map(fcolors.extend, colors)
+				list(map(fcolors.extend, colors))
 				
 				# push colors to vertex list
 				self.vertex_colors[display_type].append(fcolors)
 				
 		t2 = time.time()
-		print "end renderColors in %0.3f ms" % ((t2-t1)*1000.0, )
+		print("end renderColors in %0.3f ms" % ((t2-t1)*1000.0, ))
 	
 	def generateGraphics(self):
 		t1 = time.time()
@@ -186,8 +183,8 @@ class App:
 		self.graphics_current = []
 		self.graphics_limbo = []
 		
-		for layer_idx in xrange(len(self.vertices)):
-			nb_layer_vertices = len(self.vertices[layer_idx])/3
+		for layer_idx in range(len(self.vertices)):
+			nb_layer_vertices = len(self.vertices[layer_idx])//3
 			vertex_list = pyglet.graphics.vertex_list(nb_layer_vertices,
 				('v3f/static', self.vertices[layer_idx]),
 				('c4B/static', self.vertex_colors[0][layer_idx])
@@ -205,10 +202,10 @@ class App:
 				('c4B/static', self.vertex_colors[2][layer_idx])
 			)
 			self.graphics_limbo.append(vertex_list)
-		#	print nb_layer_vertices, len(self.vertices[layer_idx]), len(self.colors[0][layer_idx])
+		#	print(nb_layer_vertices, len(self.vertices[layer_idx]), len(self.colors[0][layer_idx]))
 		
 		t2 = time.time()
-		print "end generateGraphics in %0.3f ms" % ((t2-t1)*1000.0, )
+		print("end generateGraphics in %0.3f ms" % ((t2-t1)*1000.0, ))
 		
 		
 	def rotate_drag_start(self, x, y, button, modifiers):
@@ -244,7 +241,7 @@ class App:
 		# sum x & y
 		delta = x - self.layerDragStartX + y - self.layerDragStartY
 		# new theoretical layer
-		self.layerIdx = int(self.layerDragStartLayer + delta/5)
+		self.layerIdx = int(self.layerDragStartLayer + delta//5)
 		# clamp layer to 0-max
 		self.layerIdx = max(min(self.layerIdx, self.model.topLayer), 0)
 		
@@ -269,6 +266,26 @@ class App:
 		self.layerDragStartY = None
 
 
+	def panning_start(self, x, y, button, modifiers):
+		self.panningStartPX = self.PX
+		self.panningStartPY = self.PY
+		self.panningStartX = x
+		self.panningStartY = y
+
+	def panning_do(self, x, y, dx, dy, buttons, modifiers):
+		# deltas
+		deltaX = x - self.panningStartX
+		deltaY = y - self.panningStartY
+		# pan!
+		self.PX = self.panningStartPX + deltaX/20.0 # mouse X bound to model X
+		self.PY = self.panningStartPY + deltaY/20.0 # mouse Y bound to model Y
+
+
+	def panning_end(self, x, y, button, modifiers):
+		self.panningStartX = None
+		self.panningStartY = None
+
+
 class MyWindow(pyglet.window.Window):
 
 	# constructor
@@ -288,10 +305,8 @@ class MyWindow(pyglet.window.Window):
 
 		# help
 		self.helpText = [
-						"Ctrl-R to reload file",
-						"Right-click & drag (any direction) to change layer",
-						"Scroll to zoom",
-						"Left-click & drag to rotate view"]
+						"Ctrl-R: reload",
+						"Left-mouse: rotate | Middle: pan, Scroll: zoom | Right: change layer"]
 		for txt in self.helpText:
 			self.blLabels.append(
 				pyglet.text.Label(	txt,
@@ -310,7 +325,7 @@ class MyWindow(pyglet.window.Window):
 										font_size=12,
 										anchor_y='top')
 		self.tlLabels.append(self.statsLabel)
-		self.tlLabels.append(self.fpsLabel)
+		#self.tlLabels.append(self.fpsLabel)
 
 		# status
 		## current Layer
@@ -332,34 +347,43 @@ class MyWindow(pyglet.window.Window):
 		return pyglet.event.EVENT_HANDLED
 
 	def on_mouse_press(self, x, y, button, modifiers):
-		#print "on_mouse_press(x=%d, y=%d, button=%s, modifiers=%s)"%(x, y, button, modifiers)
+		#print("on_mouse_press(x=%d, y=%d, button=%s, modifiers=%s)"%(x, y, button, modifiers))
 		if button & mouse.LEFT:
 			self.app.rotate_drag_start(x, y, button, modifiers)
 			
 		if button & mouse.RIGHT:
 			self.app.layer_drag_start(x, y, button, modifiers)
 
+		if button & mouse.MIDDLE:
+			self.app.panning_start(x, y, button, modifiers)
+
 
 	def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-		#print "on_mouse_drag(x=%d, y=%d, dx=%d, dy=%d, buttons=%s, modifiers=%s)"%(x, y, dx, dy, buttons, modifiers)
+		#print("on_mouse_drag(x=%d, y=%d, dx=%d, dy=%d, buttons=%s, modifiers=%s)"%(x, y, dx, dy, buttons, modifiers))
 		if buttons & mouse.LEFT:
 			self.app.rotate_drag_do(x, y, dx, dy, buttons, modifiers)
 			
 		if buttons & mouse.RIGHT:
 			self.app.layer_drag_do(x, y, dx, dy, buttons, modifiers)
 
+		if buttons & mouse.MIDDLE:
+			self.app.panning_do(x, y, dx, dy, buttons, modifiers)
+
 
 	def on_mouse_release(self, x, y, button, modifiers):
-		#print "on_mouse_release(x=%d, y=%d, button=%s, modifiers=%s)"%(x, y, button, modifiers)
+		#print("on_mouse_release(x=%d, y=%d, button=%s, modifiers=%s)"%(x, y, button, modifiers))
 		if button & mouse.LEFT:
 			self.app.rotate_drag_end(x, y, button, modifiers)
 			
 		if button & mouse.RIGHT:
 			self.app.layer_drag_end(x, y, button, modifiers)
 
+		if button & mouse.RIGHT:
+			self.app.panning_end(x, y, button, modifiers)
+
 	def on_key_release(self, symbol, modifiers):
-		print "pressed key: %s, mod: %s"%(symbol, modifiers)
-		#print "pressed key: %s, mod: %s"%(pyglet.window.key.R, pyglet.window.key.MOD_CTRL)
+		print("pressed key: %s, mod: %s"%(symbol, modifiers))
+		#print("pressed key: %s, mod: %s"%(pyglet.window.key.R, pyglet.window.key.MOD_CTRL))
 		if symbol==pyglet.window.key.R and modifiers & pyglet.window.key.MOD_CTRL:
 			self.app.reload()
 		
@@ -400,10 +424,10 @@ class MyWindow(pyglet.window.Window):
 			return
 		z = 1.2 if delta>0 else 1/1.2
 		self.app.zoom = max(1.0, self.app.zoom * z)
-		#print 'mouse scroll:', `x, y, dx, dy`, `z, self.app.zoom`
+		#print('mouse scroll:', `x, y, dx, dy`, `z, self.app.zoom`)
 
 	def on_draw(self):
-		#print "draw"
+		#print("draw")
 		
 		# Clear buffers
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -424,6 +448,10 @@ class MyWindow(pyglet.window.Window):
 		
 		# rotate axes to match reprap style
 		glRotated(-90, 1,0,0)
+
+		# user pan model
+		glTranslated(self.app.PX,self.app.PY,0)
+
 		# user rotate model
 		glRotated(-self.app.RX, 1,0,0)
 		glRotated(self.app.RZ, 0,0,1)

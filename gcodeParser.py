@@ -100,10 +100,10 @@ class GcodeParser:
 		self.model.do_G92(self.parseArgs(args))
 		
 	def warn(self, msg):
-		print "[WARN] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line)
+		print("[WARN] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line))
 		
 	def error(self, msg):
-		print "[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line)
+		print("[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line))
 		raise Exception("[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line))
 
 class BBox(object):
@@ -172,7 +172,7 @@ class GcodeModel:
 		coords = dict(self.relative)
 		# update changed coords
 		for axis in args.keys():
-			if coords.has_key(axis):
+			if axis in coords:
 				if self.isRelative:
 					coords[axis] += args[axis]
 				else:
@@ -209,7 +209,7 @@ class GcodeModel:
 			args = {"X":0.0, "Y":0.0, "Z":0.0, "E":0.0}
 		# update specified axes
 		for axis in args.keys():
-			if self.offset.has_key(axis):
+			if axis in self.offset:
 				# transfer value from relative to offset
 				self.offset[axis] += self.relative[axis] - args[axis]
 				self.relative[axis] = args[axis]
@@ -406,4 +406,4 @@ if __name__ == '__main__':
 	parser = GcodeParser()
 	model = parser.parseFile(path)
 
-	print model
+	print(model)
