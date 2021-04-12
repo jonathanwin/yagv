@@ -1,5 +1,5 @@
 APPNAME = yagv
-VERSION = 0.5.1
+VERSION = 0.5.2         # check setup.py and ./yagv too
 
 all::
 	@echo "make install deinstall"

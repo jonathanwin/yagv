@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name = 'yagv',
-    version = '0.5.1',
+    version = '0.5.2',        # -- check ./yagv & Makefile too
     description = 'Yet another Gcode viewer (3D Printing Format)',
     packages = setuptools.find_packages(),
     package_dir = {"":'.'},

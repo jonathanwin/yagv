@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-YAGV_VERSION = "0.5.1"
+YAGV_VERSION = "0.5.2"        # -- check Makefile and setup.py too
 
 import pyglet
 
@@ -20,6 +20,8 @@ c_background = [ .8,.8,.8, 1. ]
 c_pen = [ .2,.2,.2, 1 ]
 c_extrude = [ 0.,.8,0. ]
 c_extrude_active = [ .8,0.,0. ]
+c_retract = [ .8,.8,0. ]
+c_unretract = [ .8,0.,.8 ]
 c_motion = [ 0.,0.,1. ]
 c_text = [ 0,0,0, 1]
 
@@ -98,7 +100,7 @@ class App:
 		t1 = time.time()
 		
 		self.vertices = []
-		
+
 		for layer in self.model.layers:
 			
 			layer_vertices = []
@@ -159,11 +161,14 @@ class App:
 		# render color index to real colors
 		colorMap = [
 				# 0: old layer
-				[ [ c_extrude[0],c_extrude[1],c_extrude[2],1 ], [ c_motion[0],c_motion[1],c_motion[2],.3 ], [ 0,0,1, 0.1], [1,0,1, 0.1] ],
+				[ [ c_extrude[0],c_extrude[1],c_extrude[2],1 ], [ c_motion[0],c_motion[1],c_motion[2],.3 ], 
+				  [c_retract[0],c_retract[1],c_retract[2], .3], [c_unretract[0],c_unretract[1],c_unretract[2], .3] ],
 				# 1: current layer
-				[ [ c_extrude_active[0],c_extrude_active[1],c_extrude_active[2],1 ], [ c_motion[0],c_motion[1],c_motion[2],.3 ], [ 0,0,1, 0.1], [1,0,1, 0.1] ],
+				[ [ c_extrude_active[0],c_extrude_active[1],c_extrude_active[2],1 ], [ c_motion[0],c_motion[1],c_motion[2],.3 ], 
+				  [c_retract[0],c_retract[1],c_retract[2],.3], [c_unretract[0],c_unretract[1],c_unretract[2],.3] ],
 				# 2: limbo layer
-				[ [ c_extrude[0],c_extrude[1],c_extrude[2],.1 ], [ c_motion[0],c_motion[1],c_motion[2],.1 ], [ 0,0,1, 0.1], [1,0,1, 0.1] ]
+				[ [ c_extrude[0],c_extrude[1],c_extrude[2],.1 ], [ c_motion[0],c_motion[1],c_motion[2],.1 ], 
+				  [c_retract[0],c_retract[1],c_retract[2],.1], [c_unretract[0],c_unretract[1],c_unretract[2],.1] ],
 				]
 		
 		# for all 3 types
@@ -262,7 +267,8 @@ class App:
 		self.layerIdx = int(self.layerDragStartLayer + delta//5)
 		# clamp layer to 0-max
 		self.layerIdx = max(min(self.layerIdx, self.model.topLayer), 0)
-		self.window.layerLabel.text = "layer %d"%self.layerIdx
+		self.window.layerLabel.text = "layer %d (z=%.2f)" % (self.layerIdx,self.model.layers[self.layerIdx].start['Z'])
+
 		
 	#	# clamp layer to 0-max, with origin slip
 	#	if (self.layerIdx < 0):
@@ -278,19 +284,19 @@ class App:
 
 	def layer_up(self):
 		self.layerIdx = max(min(self.layerIdx+1, self.model.topLayer), 0)
-		self.window.layerLabel.text = "layer %d"%self.layerIdx
+		self.window.layerLabel.text = "layer %d (z=%.2f)" % (self.layerIdx,self.model.layers[self.layerIdx].start['Z'])
 
 	def layer_down(self):
 		self.layerIdx = max(min(self.layerIdx-1, self.model.topLayer), 0)
-		self.window.layerLabel.text = "layer %d"%self.layerIdx
+		self.window.layerLabel.text = "layer %d (z=%.2f)" % (self.layerIdx,self.model.layers[self.layerIdx].start['Z'])
 
 	def layer_bottom(self):
 		self.layerIdx = min(1, self.model.topLayer)
-		self.window.layerLabel.text = "layer %d"%self.layerIdx
+		self.window.layerLabel.text = "layer %d (z=%.2f)" % (self.layerIdx,self.model.layers[self.layerIdx].start['Z'])
 
 	def layer_top(self):
 		self.layerIdx = self.model.topLayer
-		self.window.layerLabel.text = "layer %d"%self.layerIdx
+		self.window.layerLabel.text = "layer %d (z=%.2f)" % (self.layerIdx,self.model.layers[self.layerIdx].start['Z'])
 
 	def layer_drag_end(self, x, y, button, modifiers):
 		self.layerDragStartLayer = None
@@ -369,7 +375,7 @@ class MyWindow(pyglet.window.Window):
 
 		# status
 		## current Layer
-		self.layerLabel = pyglet.text.Label(	"layer %d"%self.app.layerIdx,
+		self.layerLabel = pyglet.text.Label(	"layer %d (z=%.2f)" % (self.app.layerIdx,self.app.model.layers[self.app.layerIdx].start['Z']),
 										font_size=10,color=c_texti,
 										anchor_x='right', anchor_y='top')
 		self.trLabels.append(self.layerLabel)
