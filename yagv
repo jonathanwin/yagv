@@ -324,6 +324,8 @@ class MyWindow(pyglet.window.Window):
 		self.tlLabels = []
 		self.trLabels = []
 
+		self.brLabels.append(pyglet.text.Label("yagv "+YAGV_VERSION,font_size=10,anchor_x='right', anchor_y='bottom'))
+      
 		# help
 		self.helpText = [
 						"Ctrl-R: reload",
