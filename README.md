@@ -1,4 +1,4 @@
-# yagv - Yet Another Gcode Viewer, v0.5.1
+# yagv - Yet Another Gcode Viewer, v0.5.2
 
 A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL (via pyglet)
 
