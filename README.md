@@ -1,6 +1,6 @@
 # yagv - Yet Another Gcode Viewer, v0.5.2
 
-A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL (via pyglet)
+A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL/pyglet
 
 ## Supported Platforms
 - Ubuntu Linux 20.04 LTS [confirmed]
@@ -29,15 +29,19 @@ By default, opens `data/hana_swimsuit_fv_solid_v1.gcode` if no file specified
   * flying the head to the next extrusion point
   * retracting filament
   * restoring filament
-* Allows displaying layers independently to examine them.
-* Automagically splits the gcode into layers.
-* Automatic scaling to fit the window.
+* Allows displaying layers independently to examine them
+* Automagically splits the gcode into layers
+* Automatic scaling to fit the window
 * Zoom, panning and rotation
 
 ## Issues
 
 * Retract/restore detected but invisible (0-length segments).
-* Designed with Slic3r output in mind, may not support other slicing programs (suggestions/patches welcome).
+* Designed with Slic3r output in mind, may not support other slicing programs (suggestions/patches welcome)
+  * Slic3r 1.2.x: works
+  * PrusaSlicer: works
+  * Cura 4.x: works
+  * Mandoline 0.8.x: works
 * Some gcodes unsupported, in particular:
   * G20: Set Units to Inches (usage unknown) 
   * Arcs (G2 & G3 ?)
