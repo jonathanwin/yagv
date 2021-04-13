@@ -60,7 +60,7 @@ class App:
 		self.path = "loading ..."
 
 		# -- create window soon, before loading ...
-		self.window = MyWindow(self, caption="Yet Another GCode Viewer v%s"%YAGV_VERSION, resizable=True, width=1024, height=768)
+		self.window = MyWindow(self, caption="Yet Another GCode Viewer v%s: %s" % (YAGV_VERSION,os.path.basename(path)), resizable=True, width=1024, height=768)
 		pyglet.gl.glClearColor(colorMap['background'][0],colorMap['background'][1],colorMap['background'][2],1)
 
 		# debug: log all events
@@ -79,17 +79,17 @@ class App:
 			
 	def load(self, path):
 		
-		print("loading file %s ..."%repr(path))
+		print("loading file %s ..." % repr(path))
 		t1 = time.time()
 		
-		print("Parsing '%s'..."%path)
+		print("Parsing '%s'..." % path)
 		
 		self.path = path
 
 		parser = GcodeParser()
 		self.model = parser.parseFile(path)
 
-		print("Done! %s"%self.model)
+		print("Done! %s" % self.model)
 		
 		# render the model
 		print("rendering vertices...")
@@ -362,7 +362,7 @@ class MyWindow(pyglet.window.Window):
 		self.trLabels = []
 
 		c_texti = list(map(lambda x: int(x*255), colorMap['text']))
-		self.brLabels.append(pyglet.text.Label("yagv "+YAGV_VERSION,font_size=10,color=c_texti,anchor_x='right', anchor_y='bottom'))
+		#self.brLabels.append(pyglet.text.Label("yagv "+YAGV_VERSION,font_size=10,color=c_texti,anchor_x='right', anchor_y='bottom'))
       
 		# help
 		self.helpText = [
@@ -560,20 +560,19 @@ class MyWindow(pyglet.window.Window):
 			glLine([0,y,0],[self.app.bed_size[0],y,0],[colorMap['grid'][0],colorMap['grid'][1],colorMap['grid'][2],0.3 if y%10 == 0 else 0.1])
 		for x in range(0,self.app.bed_size[0]+1):
 			glLine([x,0,0],[x,self.app.bed_size[1],0],[colorMap['grid'][0],colorMap['grid'][1],colorMap['grid'][2],0.3 if x%10 == 0 else 0.1])
-		
-		# draw the model layers
 
-		# lower layers
+		# -- draw the model layers
+		#    lower layers
 		glLineWidth(1)
 		for graphic in self.app.graphics_old[0:self.app.layerIdx]:
 			graphic.draw(GL_LINES)
 		
-		# highlighted layer
+		#    highlighted layer
 		glLineWidth(2)
 		graphic = self.app.graphics_current[self.app.layerIdx]
 		graphic.draw(GL_LINES)
 		
-		# limbo layers
+		#    limbo layers
 		glLineWidth(1)
 		for graphic in self.app.graphics_limbo[self.app.layerIdx+1:]:
 			graphic.draw(GL_LINES)
