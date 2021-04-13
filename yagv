@@ -17,16 +17,19 @@ import os.path
 import time
 
 colorMap = {
+	# Misc:
 	"background": [ 1,1,1, 1. ],
-	"pen": [ .2,.2,.2, 1 ],
+	"grid": [ .2,.2,.2, 1. ],
+	"text": [ 0,0,0, 1. ],
+
+   # Gcode:
 	"extrude": [ 0.,.8,0. ],
 	"extrude_active": [ .8,0.,0. ],
 	"extrude_wall": [ .2,.9,0. ],
 	"extrude_wall_active": [ .8,.5,0. ],
 	"retract": [ .8,.8,0. ],
 	"unretract": [ .8,0.,.8 ],
-	"motion": [ 0.,0.,1. ],
-	"text": [ 0,0,0, 1 ]
+	"motion": [ 0.,0.,1. ]
 }
 
 class App:
@@ -169,25 +172,25 @@ class App:
 		self.vertex_colors = [[],[],[]]
 		
 		# render color index to real colors
-		cm = [
-				# 0: old layer
-				[ [ colorMap['extrude'][0],colorMap['extrude'][1],colorMap['extrude'][2],.5 ], [ colorMap['motion'][0],colorMap['motion'][1],colorMap['motion'][2],.1 ], 
-				  [ colorMap['retract'][0],colorMap['retract'][1],colorMap['retract'][2],.3 ], [ colorMap['unretract'][0],colorMap['unretract'][1],colorMap['unretract'][2],.3 ],
-				  [ colorMap['extrude_wall'][0],colorMap['extrude_wall'][1],colorMap['extrude_wall'][2],0.5] ],
-				# 1: current layer
-				[ [ colorMap['extrude_active'][0],colorMap['extrude_active'][1],colorMap['extrude_active'][2],1 ], [ colorMap['motion'][0],colorMap['motion'][1],colorMap['motion'][2],.3 ], 
-				  [ colorMap['retract'][0],colorMap['retract'][1],colorMap['retract'][2],.3], [ colorMap['unretract'][0],colorMap['unretract'][1],colorMap['unretract'][2],.3 ],
-				  [ colorMap['extrude_wall_active'][0],colorMap['extrude_wall_active'][1],colorMap['extrude_active'][2],1] ],
-				# 2: limbo layer
-				[ [ colorMap['extrude'][0],colorMap['extrude'][1],colorMap['extrude'][2],.1 ], [ colorMap['motion'][0],colorMap['motion'][1],colorMap['motion'][2],.1 ], 
-				  [ colorMap['retract'][0],colorMap['retract'][1],colorMap['retract'][2],.1 ], [ colorMap['unretract'][0],colorMap['unretract'][1],colorMap['unretract'][2],.1 ],
-				  [ colorMap['extrude_wall'][0],colorMap['extrude_wall'][1],colorMap['extrude_wall'][2],0.1] ]
-				]
+		cm = [ 
+			# 0: old layer
+			[ colorMap['extrude'].copy(),        colorMap['motion'].copy(), colorMap['retract'].copy(), colorMap['unretract'].copy(), colorMap['extrude_wall'].copy() ],
+			# 1: current layer
+			[ colorMap['extrude_active'].copy(), colorMap['motion'].copy(), colorMap['retract'].copy(), colorMap['unretract'].copy(), colorMap['extrude_wall_active'].copy() ],
+			# 2: limbo layer
+			[ colorMap['extrude'].copy(),        colorMap['motion'].copy(), colorMap['retract'].copy(), colorMap['unretract'].copy(), colorMap['extrude_wall'].copy() ]
+		]
+		for i in range(5):         # -- add per type the alpha
+			cm[0][i].append(0.5)    # -- old
+			cm[1][i].append(1.0)    # -- current
+			cm[2][i].append(0.1)    # -- limbo
+		
 		# for all 3 types
 		for display_type in range(3):
 			
-			#type_color_map = cm[display_type])
+			#type_color_map = cm[display_type]
 
+			# -- cumbersome float -> int color
 			type_color_map = []
 			n = 0
 			for c in cm[display_type]:
@@ -554,9 +557,9 @@ class MyWindow(pyglet.window.Window):
 		
 		# draw bed grid
 		for y in range(0,self.app.bed_size[1]+1):
-			glLine([0,y,0],[self.app.bed_size[0],y,0],[colorMap['pen'][0],colorMap['pen'][1],colorMap['pen'][2],0.3 if y%10 == 0 else 0.1])
+			glLine([0,y,0],[self.app.bed_size[0],y,0],[colorMap['grid'][0],colorMap['grid'][1],colorMap['grid'][2],0.3 if y%10 == 0 else 0.1])
 		for x in range(0,self.app.bed_size[0]+1):
-			glLine([x,0,0],[x,self.app.bed_size[1],0],[colorMap['pen'][0],colorMap['pen'][1],colorMap['pen'][2],0.3 if x%10 == 0 else 0.1])
+			glLine([x,0,0],[x,self.app.bed_size[1],0],[colorMap['grid'][0],colorMap['grid'][1],colorMap['grid'][2],0.3 if x%10 == 0 else 0.1])
 		
 		# draw the model layers
 
