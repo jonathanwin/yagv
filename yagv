@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-YAGV_VERSION = "0.5.2"        # -- check Makefile and setup.py too
+YAGV_VERSION = "0.5.3"        # -- check Makefile and setup.py too
 
 import pyglet
 
@@ -16,16 +16,18 @@ from gcodeParser import *
 import os.path
 import time
 
-c_background = [ 1,1,1, 1. ]
-c_pen = [ .2,.2,.2, 1 ]
-c_extrude = [ 0.,.8,0. ]
-c_extrude_active = [ .8,0.,0. ]
-c_retract = [ .8,.8,0. ]
-c_unretract = [ .8,0.,.8 ]
-c_motion = [ 0.,0.,1. ]
-c_text = [ 0,0,0, 1]
-
-c_texti = list(map(lambda x: int(x*255), c_text))
+colorMap = {
+	"background": [ 1,1,1, 1. ],
+	"pen": [ .2,.2,.2, 1 ],
+	"extrude": [ 0.,.8,0. ],
+	"extrude_active": [ .8,0.,0. ],
+	"extrude_wall": [ .2,.9,0. ],
+	"extrude_wall_active": [ .8,.5,0. ],
+	"retract": [ .8,.8,0. ],
+	"unretract": [ .8,0.,.8 ],
+	"motion": [ 0.,0.,1. ],
+	"text": [ 0,0,0, 1 ]
+}
 
 class App:
 	def __init__(self):
@@ -56,7 +58,7 @@ class App:
 
 		# -- create window soon, before loading ...
 		self.window = MyWindow(self, caption="Yet Another GCode Viewer v%s"%YAGV_VERSION, resizable=True, width=1024, height=768)
-		pyglet.gl.glClearColor(c_background[0],c_background[1],c_background[2],1)
+		pyglet.gl.glClearColor(colorMap['background'][0],colorMap['background'][1],colorMap['background'][2],1)
 
 		# debug: log all events
 		# self.window.push_handlers(pyglet.window.event.WindowEventLogger())
@@ -135,7 +137,8 @@ class App:
 			"extrude" : 0,
 			"fly" : 1,
 			"retract" : 2,
-			"restore" : 3
+			"restore" : 3,
+	  		"extrude.wall": 4
 			}
 		
 		# all the styles for all layers
@@ -148,7 +151,10 @@ class App:
 			layer_vertex_indexed_colors = []
 			for seg in layer.segments:
 				# get color index for this segment
-				styleCol = styleToColoridx[seg.style]
+				if seg.type == 'G1:wall':
+					styleCol = styleToColoridx['extrude.wall']
+				else:
+					styleCol = styleToColoridx[seg.style]
 				# append color twice (once per end)
 				layer_vertex_indexed_colors.extend((styleCol, styleCol))
 			
@@ -163,31 +169,33 @@ class App:
 		self.vertex_colors = [[],[],[]]
 		
 		# render color index to real colors
-		colorMap = [
+		cm = [
 				# 0: old layer
-				[ [ c_extrude[0],c_extrude[1],c_extrude[2],.5 ], [ c_motion[0],c_motion[1],c_motion[2],.3 ], 
-				  [c_retract[0],c_retract[1],c_retract[2], .3], [c_unretract[0],c_unretract[1],c_unretract[2], .3] ],
+				[ [ colorMap['extrude'][0],colorMap['extrude'][1],colorMap['extrude'][2],.5 ], [ colorMap['motion'][0],colorMap['motion'][1],colorMap['motion'][2],.1 ], 
+				  [ colorMap['retract'][0],colorMap['retract'][1],colorMap['retract'][2],.3 ], [ colorMap['unretract'][0],colorMap['unretract'][1],colorMap['unretract'][2],.3 ],
+				  [ colorMap['extrude_wall'][0],colorMap['extrude_wall'][1],colorMap['extrude_wall'][2],0.5] ],
 				# 1: current layer
-				[ [ c_extrude_active[0],c_extrude_active[1],c_extrude_active[2],1 ], [ c_motion[0],c_motion[1],c_motion[2],.3 ], 
-				  [c_retract[0],c_retract[1],c_retract[2],.3], [c_unretract[0],c_unretract[1],c_unretract[2],.3] ],
+				[ [ colorMap['extrude_active'][0],colorMap['extrude_active'][1],colorMap['extrude_active'][2],1 ], [ colorMap['motion'][0],colorMap['motion'][1],colorMap['motion'][2],.3 ], 
+				  [ colorMap['retract'][0],colorMap['retract'][1],colorMap['retract'][2],.3], [ colorMap['unretract'][0],colorMap['unretract'][1],colorMap['unretract'][2],.3 ],
+				  [ colorMap['extrude_wall_active'][0],colorMap['extrude_wall_active'][1],colorMap['extrude_active'][2],1] ],
 				# 2: limbo layer
-				[ [ c_extrude[0],c_extrude[1],c_extrude[2],.1 ], [ c_motion[0],c_motion[1],c_motion[2],.1 ], 
-				  [c_retract[0],c_retract[1],c_retract[2],.1], [c_unretract[0],c_unretract[1],c_unretract[2],.1] ],
+				[ [ colorMap['extrude'][0],colorMap['extrude'][1],colorMap['extrude'][2],.1 ], [ colorMap['motion'][0],colorMap['motion'][1],colorMap['motion'][2],.1 ], 
+				  [ colorMap['retract'][0],colorMap['retract'][1],colorMap['retract'][2],.1 ], [ colorMap['unretract'][0],colorMap['unretract'][1],colorMap['unretract'][2],.1 ],
+				  [ colorMap['extrude_wall'][0],colorMap['extrude_wall'][1],colorMap['extrude_wall'][2],0.1] ]
 				]
-		
 		# for all 3 types
 		for display_type in range(3):
 			
-			#type_color_map = colorMap[display_type])
+			#type_color_map = cm[display_type])
 
 			type_color_map = []
 			n = 0
-			for c in colorMap[display_type]:
+			for c in cm[display_type]:
 				type_color_map.append([])
 				for i in range(4):
 					type_color_map[n].append(int(c[i]*255))
 				n += 1
-			
+
 			# for all preindexed layer colors
 			for indexes in self.vertex_indexed_colors:
 				
@@ -350,6 +358,7 @@ class MyWindow(pyglet.window.Window):
 		self.tlLabels = []
 		self.trLabels = []
 
+		c_texti = list(map(lambda x: int(x*255), colorMap['text']))
 		self.brLabels.append(pyglet.text.Label("yagv "+YAGV_VERSION,font_size=10,color=c_texti,anchor_x='right', anchor_y='bottom'))
       
 		# help
@@ -545,9 +554,9 @@ class MyWindow(pyglet.window.Window):
 		
 		# draw bed grid
 		for y in range(0,self.app.bed_size[1]+1):
-			glLine([0,y,0],[self.app.bed_size[0],y,0],[c_pen[0],c_pen[1],c_pen[2],0.3 if y%10 == 0 else 0.1])
+			glLine([0,y,0],[self.app.bed_size[0],y,0],[colorMap['pen'][0],colorMap['pen'][1],colorMap['pen'][2],0.3 if y%10 == 0 else 0.1])
 		for x in range(0,self.app.bed_size[0]+1):
-			glLine([x,0,0],[x,self.app.bed_size[1],0],[c_pen[0],c_pen[1],c_pen[2],0.3 if x%10 == 0 else 0.1])
+			glLine([x,0,0],[x,self.app.bed_size[1],0],[colorMap['pen'][0],colorMap['pen'][1],colorMap['pen'][2],0.3 if x%10 == 0 else 0.1])
 		
 		# draw the model layers
 

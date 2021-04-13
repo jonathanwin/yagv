@@ -7,6 +7,7 @@ class GcodeParser:
 	
 	def __init__(self):
 		self.model = GcodeModel(self)
+		self.current_type = None
 		
 	def parseFile(self, path):
 		# read the gcode file
@@ -32,6 +33,9 @@ class GcodeParser:
 		## then semicolons
 		idx = command.find(';')
 		if idx >= 0:
+			m = re.search(r'TYPE:\s*(\w+)',command)
+			if m:
+				self.current_type = m[1].lower()
 			command = command[0:idx].strip()
 		## detect unterminated round bracket comments, just in case
 		idx = command.find('(')
@@ -41,7 +45,7 @@ class GcodeParser:
 		
 		# TODO strip logical line number & checksum
 		
-		# code is fist word, then args
+		# code is first word, then args
 		comm = command.split(None, 1)
 		code = comm[0] if (len(comm)>0) else None
 		args = comm[1] if (len(comm)>1) else None
@@ -72,7 +76,7 @@ class GcodeParser:
 		
 	def parse_G1(self, args, type="G1"):
 		# G1: Controlled move
-		self.model.do_G1(self.parseArgs(args), type)
+		self.model.do_G1(self.parseArgs(args), type+(":"+self.current_type if self.current_type else ''))
 		
 	def parse_G20(self, args):
 		# G20: Set Units to Inches
