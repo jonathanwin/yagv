@@ -8,6 +8,7 @@ class GcodeParser:
 	def __init__(self):
 		self.model = GcodeModel(self)
 		self.current_type = None
+		self.layer_count = None
 		
 	def parseFile(self, path):
 		# read the gcode file
@@ -32,13 +33,21 @@ class GcodeParser:
 		command = re.sub("\([^)]*\)", "", self.line)
 		## then semicolons
 		idx = command.find(';')
-		if idx >= 0:
+		if idx >= 0:                                     # -- any comment to parse?
 			m = re.search(r'TYPE:\s*(\w+)',command)
 			if m:
 				self.current_type = m[1].lower()
-			m = re.search(r'; (skirt|perimeter|infill|support)',command)
-			if m:
-				self.current_type = m[1]
+			else:
+				m = re.search(r'; (skirt|perimeter|infill|support)',command)
+				if m:
+					self.current_type = m[1]
+				else:
+					if not self.layer_count and re.search(r'LAYER_COUNT:',command):
+						self.layer_count = 1
+					m = re.search(r'LAYER:\s*(\d+)',command)      # -- we have actual LAYER: counter! let's use it
+					if m:
+						self.layer_count = 1
+						self.layer_current = int(m[1])
 			command = command[0:idx].strip()
 		## detect unterminated round bracket comments, just in case
 		idx = command.find('(')
@@ -227,6 +236,8 @@ class GcodeModel:
 		self.isRelative = isRelative
 		
 	def addSegment(self, segment):
+		if self.parser.layer_count:		
+			segment.layerIdx = self.parser.layer_current
 		self.segments.append(segment)
 		#print segment
 		
@@ -278,8 +289,8 @@ class GcodeModel:
 			
 			# set style and layer in segment
 			seg.style = style
-			seg.layerIdx = currentLayerIdx
-			
+			if not self.parser.layer_count:
+				seg.layerIdx = currentLayerIdx
 			
 			#print coords
 			#print seg.coords
