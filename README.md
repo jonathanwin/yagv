@@ -7,6 +7,7 @@ A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL/pyglet
 - Expected to work in any Linux, Windows or macOS
 
 ![Screenshot](img/screenshot.png)
+![Screenshot](img/screenshot-support.png)
 
 ## Installation
 ```
