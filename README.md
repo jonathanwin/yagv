@@ -55,9 +55,11 @@ By default, opens `data/hana_swimsuit_fv_solid_v1.gcode` if no file specified
 * 0.5.0: ported to Python3, added panning, smaller font
 
 ## More Examples
-### Support
+### Support Structure
 ![Screenshot](img/screenshot-support.png)
+Given `--gcode-comments` is enabled for Slic3r and PrusaSlicer.
 
 ### Non-Planar Slices
 ![Screenshot](img/screenshot-nonplanar.png)
+Gcode from [Slicer4RTN](https://github.com/Spiritdude/Slicer4RTN), conic/tilted slicer for 4- and 5-axis FDM printers
 
