@@ -2,12 +2,25 @@
 
 A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL/pyglet
 
+![Screenshot](img/screenshot.png)
+
+![Screenshot](img/screenshot-support.png)
+
+## Features
+
+* Colors segments according to their type:
+  * extruding (wall, infill, support if G-code comments are enabled in slicer)
+  * motion of the head to the next extrusion point
+  * retracting filament
+  * restoring filament
+* Allows displaying layers independently to examine them (scroll up & down)
+* Automagically splits the Gcode into layers
+* Automatic scaling to fit the window
+* Zoom, panning and rotation
+
 ## Supported Platforms
 - Ubuntu Linux 20.04 LTS [confirmed]
 - Expected to work in any Linux, Windows or macOS
-
-![Screenshot](img/screenshot.png)
-![Screenshot](img/screenshot-support.png)
 
 ## Installation
 ```
@@ -22,18 +35,6 @@ A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL/pyglet
 % yagv [file.gcode]
 ```
 By default, opens `data/hana_swimsuit_fv_solid_v1.gcode` if no file specified
-
-## Features
-
-* Colors segments according to their type:
-  * extruding
-  * flying the head to the next extrusion point
-  * retracting filament
-  * restoring filament
-* Allows displaying layers independently to examine them
-* Automagically splits the gcode into layers
-* Automatic scaling to fit the window
-* Zoom, panning and rotation
 
 ## Issues
 
