@@ -20,7 +20,8 @@ A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL/pyglet
   * [PrusaSlicer](https://www.prusa3d.com/prusaslicer/) 2.1.1: works
   * [Cura](https://ultimaker.com/software/ultimaker-cura) 4.x: works
   * [Mandoline](https://github.com/Spiritdude/mandoline-py) 0.8.x: works
-
+  * [Slicer4RTN](https://github.com/Spiritude/Slicer4RTN) 0.4.x: works (non-planar slices)
+  
 ## Supported Platforms
 - Ubuntu Linux 20.04 LTS [confirmed]
 - Expected to work in any Linux, Windows or macOS
