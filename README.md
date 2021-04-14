@@ -41,6 +41,7 @@ By default, opens `data/hana_swimsuit_fv_solid_v1.gcode` if no file specified
 
 ## Issues
 
+* Zoom & Panning don't work well together, zoom in/out changes focus center
 * Retract/restore detected but invisible (0-length segments).
 * Some GCodes unsupported, in particular:
   * G20: Set Units to Inches
