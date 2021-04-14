@@ -154,7 +154,7 @@ class App:
 			layer_vertex_indexed_colors = []
 			for seg in layer.segments:
 				# get color index for this segment
-				if seg.type == 'G1:wall':
+				if seg.type == 'G1:wall' or seg.type == 'G1:shell' or seg.type == 'G1:perimeter':
 					styleCol = styleToColoridx['extrude.wall']
 				else:
 					styleCol = styleToColoridx[seg.style]
