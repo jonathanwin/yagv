@@ -3,6 +3,7 @@
 YAGV_VERSION = "0.5.3"        # -- check Makefile and setup.py too
 
 import pyglet
+import math
 
 # Disable error checking for increased performance
 pyglet.options['debug_gl'] = False
@@ -331,11 +332,18 @@ class App:
 
 	def panning_do(self, x, y, dx, dy, buttons, modifiers):
 		# deltas
-		deltaX = x - self.panningStartX
-		deltaY = y - self.panningStartY
+		a = -1
+		b = 0
+		#deltaX = x - self.panningStartX
+		#deltaY = y - self.panningStartY
+		deltaX = math.cos((a*self.RZ+b)/180*math.pi) * (x - self.panningStartX) + math.sin((a*self.RZ+b)/180*math.pi) * (y - self.panningStartY)
+		deltaY = math.sin((a*self.RZ+b)/180*math.pi) * (x - self.panningStartX) + math.cos((a*self.RZ+b)/180*math.pi) * (y - self.panningStartY)
 		# pan!
-		self.PX = self.panningStartPX + deltaX/50.0 # mouse X bound to model X
-		self.PY = self.panningStartPY + deltaY/50.0 # mouse Y bound to model Y
+		f = 5
+		self.PX = self.panningStartPX + deltaX/f # mouse X bound to model X
+		self.PY = self.panningStartPY + deltaY/f # mouse Y bound to model Y
+		#self.PX = math.cos((a*self.RZ+b)/180*math.pi) * (self.panningStartPX + deltaX/f) + math.sin((a*self.RZ+b)/180*math.pi) * (self.panningStartPY + deltaY/f)
+		#self.PY = math.sin((a*self.RZ+b)/180*math.pi) * (self.panningStartPX + deltaX/f) + math.cos((a*self.RZ+b)/180*math.pi) * (self.panningStartPY + deltaY/f)
 
 	def panning_end(self, x, y, button, modifiers):
 		self.panningStartX = None
@@ -526,9 +534,6 @@ class MyWindow(pyglet.window.Window):
 		# rotate axes to match reprap style
 		glRotated(-90, 1,0,0)
 
-		# user pan model
-		glTranslated(self.app.PX,self.app.PY,0)
-
 		# user rotate model
 		glRotated(-self.app.RX, 1,0,0)
 		glRotated(self.app.RZ, 0,0,1)
@@ -545,6 +550,9 @@ class MyWindow(pyglet.window.Window):
 		scale = self.app.zoom / max_width
 		glScaled(scale, scale, scale)
 		
+		# user pan model
+		glTranslated(self.app.PX,self.app.PY,0)
+
 		glTranslated(-self.app.model.bbox.cx(), -self.app.model.bbox.cy(), -self.app.model.bbox.cz())
 		
 		# draw axes
