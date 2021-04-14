@@ -13,7 +13,7 @@ deinstall::
 # -- devs only:
 
 edit::
-	${EDITOR} yagv gcodeParser.py Makefile README.md setup.py
+	${EDITOR} yagv gcodeParser.py Makefile tests/Makefile README.md setup.py
 
 change::
 	git commit -am "..."
