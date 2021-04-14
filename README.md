@@ -38,10 +38,10 @@ By default, opens `data/hana_swimsuit_fv_solid_v1.gcode` if no file specified
 
 * Retract/restore detected but invisible (0-length segments).
 * Designed with Slic3r output in mind, may not support other slicing programs (suggestions/patches welcome)
-  * Slic3r 1.2.x: works
-  * PrusaSlicer: works
-  * Cura 4.x: works
-  * Mandoline 0.8.x: works
+  * [Slic3r](https://slic3r.org/) 1.2.9: works
+  * [PrusaSlicer](https://prusa3d.org/) 2.1.1: works
+  * [Cura](https://ultimaker.com/software/ultimaker-cura) 4.x: works
+  * [Mandoline](https://github.com/Spiritdude/mandoline-py) 0.8.x: works
 * Some gcodes unsupported, in particular:
   * G20: Set Units to Inches (usage unknown) 
   * Arcs (G2 & G3 ?)
