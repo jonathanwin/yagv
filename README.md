@@ -54,3 +54,10 @@ By default, opens `data/hana_swimsuit_fv_solid_v1.gcode` if no file specified
 * 0.5.1: `setup.py` with proper pyglet version to match code (pre-2.0), drawing bed grid
 * 0.5.0: ported to Python3, added panning, smaller font
 
+## More Examples
+### Support
+![Screenshot](img/screenshot-support.png)
+
+### Non-Planar Slices
+![Screenshot](img/screenshot-nonplanar.png)
+
