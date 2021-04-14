@@ -4,8 +4,6 @@ A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL/pyglet
 
 ![Screenshot](img/screenshot.png)
 
-![Screenshot](img/screenshot-support.png)
-
 ## Features
 
 * Colors segments according to their type:
