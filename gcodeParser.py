@@ -36,7 +36,7 @@ class GcodeParser:
 			m = re.search(r'TYPE:\s*(\w+)',command)
 			if m:
 				self.current_type = m[1].lower()
-			m = re.search(r'; (skirt|perimeter|infill)',command)
+			m = re.search(r'; (skirt|perimeter|infill|support)',command)
 			if m:
 				self.current_type = m[1]
 			command = command[0:idx].strip()
