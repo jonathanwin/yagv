@@ -332,18 +332,15 @@ class App:
 
 	def panning_do(self, x, y, dx, dy, buttons, modifiers):
 		# deltas
-		a = -1
-		b = 0
 		#deltaX = x - self.panningStartX
 		#deltaY = y - self.panningStartY
-		deltaX = math.cos((a*self.RZ+b)/180*math.pi) * (x - self.panningStartX) + math.sin((a*self.RZ+b)/180*math.pi) * (y - self.panningStartY)
-		deltaY = math.sin((a*self.RZ+b)/180*math.pi) * (x - self.panningStartX) + math.cos((a*self.RZ+b)/180*math.pi) * (y - self.panningStartY)
+		# -- panning done with proper rotation
+		deltaX = math.cos(-self.RZ/180*math.pi) * (x - self.panningStartX) + math.sin(self.RZ/180*math.pi) * (y - self.panningStartY)
+		deltaY = math.sin(-self.RZ/180*math.pi) * (x - self.panningStartX) + math.cos(self.RZ/180*math.pi) * (y - self.panningStartY)
 		# pan!
 		f = 5
 		self.PX = self.panningStartPX + deltaX/f # mouse X bound to model X
 		self.PY = self.panningStartPY + deltaY/f # mouse Y bound to model Y
-		#self.PX = math.cos((a*self.RZ+b)/180*math.pi) * (self.panningStartPX + deltaX/f) + math.sin((a*self.RZ+b)/180*math.pi) * (self.panningStartPY + deltaY/f)
-		#self.PY = math.sin((a*self.RZ+b)/180*math.pi) * (self.panningStartPX + deltaX/f) + math.cos((a*self.RZ+b)/180*math.pi) * (self.panningStartPY + deltaY/f)
 
 	def panning_end(self, x, y, button, modifiers):
 		self.panningStartX = None
