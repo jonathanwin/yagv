@@ -14,7 +14,7 @@ A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL/pyglet
 * Allows displaying layers independently to examine them (scroll up & down)
 * Automagically splits the Gcode into layers
 * Automatic scaling to fit the window
-* Zoom, panning and rotation
+* Zoom, panning and rotation (same mouse-button layout as OpenSCAD)
 * Supported slicers:
   * [Slic3r](https://slic3r.org/) 1.2.9: works
   * [PrusaSlicer](https://www.prusa3d.com/prusaslicer/) 2.1.1: works
@@ -42,7 +42,7 @@ By default, opens `data/hana_swimsuit_fv_solid_v1.gcode` if no file specified
 
 ## Issues
 
-* Zoom & Panning don't work well together, zoom in/out changes focus center
+* ~~Zoom & Panning don't work well together, zoom in/out changes focus center~~ resolved in 0.5.3
 * Retract/restore detected but invisible (0-length segments).
 * Some GCodes unsupported, in particular:
   * G20: Set Units to Inches
