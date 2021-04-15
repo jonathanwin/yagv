@@ -187,7 +187,7 @@ class App:
 			[ colorMap['extrude'].copy(),        colorMap['motion'].copy(), colorMap['retract'].copy(), colorMap['unretract'].copy(), colorMap['extrude_wall'].copy(), colorMap['extrude_support'].copy() ]
 		]
 		for i in range(6):         # -- add per type the alpha
-			cm[0][i].append(.2 if i==1 or i==5 else .5)    # -- old
+			cm[0][i].append(.2 if i==1 or i==5 else .7)    # -- old
 			cm[1][i].append(.2 if i==1 else 1.)    # -- current
 			cm[2][i].append(.1)    # -- limbo
 		
