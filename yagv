@@ -377,7 +377,7 @@ class MyWindow(pyglet.window.Window):
 		# help
 		self.helpText = [
 						"Ctrl-R: reload",
-						"Left-mouse: rotate | Middle: pan, Scroll: zoom | Right: change layer"]
+						"Left-mouse: rotate | Middle: change layer, Scroll: zoom | Right: panning"]
 		for txt in self.helpText:
 			self.blLabels.append(
 				pyglet.text.Label(	txt,
@@ -422,10 +422,10 @@ class MyWindow(pyglet.window.Window):
 		if button & mouse.LEFT:
 			self.app.rotate_drag_start(x, y, button, modifiers)
 			
-		if button & mouse.RIGHT:
+		if button & mouse.MIDDLE:
 			self.app.layer_drag_start(x, y, button, modifiers)
 
-		if button & mouse.MIDDLE:
+		if button & mouse.RIGHT:
 			self.app.panning_start(x, y, button, modifiers)
 
 
@@ -434,10 +434,10 @@ class MyWindow(pyglet.window.Window):
 		if buttons & mouse.LEFT:
 			self.app.rotate_drag_do(x, y, dx, dy, buttons, modifiers)
 			
-		if buttons & mouse.RIGHT:
+		if buttons & mouse.MIDDLE:
 			self.app.layer_drag_do(x, y, dx, dy, buttons, modifiers)
 
-		if buttons & mouse.MIDDLE:
+		if buttons & mouse.RIGHT:
 			self.app.panning_do(x, y, dx, dy, buttons, modifiers)
 
 
@@ -446,7 +446,7 @@ class MyWindow(pyglet.window.Window):
 		if button & mouse.LEFT:
 			self.app.rotate_drag_end(x, y, button, modifiers)
 			
-		if button & mouse.RIGHT:
+		if button & mouse.MIDDLE:
 			self.app.layer_drag_end(x, y, button, modifiers)
 
 		if button & mouse.RIGHT:
