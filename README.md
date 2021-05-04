@@ -37,6 +37,14 @@ A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL/pyglet
 
 ```
 % yagv [file.gcode]
+
+% Yet Another GCode Viewer v0.5.4
+USAGE yagv: [<opts>] file.gcode
+   options:
+      --help               display this message
+      --dark               enable dark mode
+      --bed-size=<w>x<h>   set bed size (e.g. 200x240)
+                     
 ```
 By default, opens `data/hana_swimsuit_fv_solid_v1.gcode` if no file specified
 
