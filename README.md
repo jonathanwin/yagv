@@ -38,7 +38,8 @@ A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL/pyglet
 ```
 % yagv [file.gcode]
 
-% Yet Another GCode Viewer v0.5.4
+% yagv --help
+Yet Another GCode Viewer v0.5.4
 USAGE yagv: [<opts>] file.gcode
    options:
       --help               display this message
