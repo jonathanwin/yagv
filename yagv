@@ -76,6 +76,14 @@ class App:
 		 		path = sys.argv[i]
 			i += 1
 
+		if 'help' in self.conf and self.conf['help']:
+			print("""USAGE yagv: [<opts>] file.gcode
+   options:
+      --help               display this message
+      --dark               enable dark mode
+      --bed-size=<w>x<h>   set bed size (e.g. 200x240)
+""")
+			sys.exit(0)
 		if 'dark' in self.conf and self.conf['dark']:
 			colorMap['background'] = [ 0,0,0, 1 ]
 			colorMap['grid'] = [ 1,1,1, 0.1 ]
