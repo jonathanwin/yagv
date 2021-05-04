@@ -57,8 +57,6 @@ class App:
 	def main(self):
 		
 		#### MAIN CODE ####
-		print("Yet Another GCode Viewer v%s"%YAGV_VERSION)
-
 		import sys
 
 		path = ''
@@ -77,12 +75,12 @@ class App:
 			i += 1
 
 		if 'help' in self.conf and self.conf['help']:
-			print("""USAGE yagv: [<opts>] file.gcode
+			print("""USAGE yagv %s: [<opts>] file.gcode
    options:
       --help               display this message
       --dark               enable dark mode
       --bed-size=<w>x<h>   set bed size (e.g. 200x240)
-""")
+""" % YAGV_VERSION)
 			sys.exit(0)
 		if 'dark' in self.conf and self.conf['dark']:
 			colorMap['background'] = [ 0,0,0, 1 ]
@@ -100,6 +98,8 @@ class App:
 			script_dir = os.path.dirname(script_path)
 			# default to hana
 			path = os.path.join(script_dir, "data/hana_swimsuit_fv_solid_v1.gcode")
+
+		print("Yet Another GCode Viewer v%s"%YAGV_VERSION)
 
 		self.path = "loading ..."
 
