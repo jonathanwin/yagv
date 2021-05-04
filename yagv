@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-YAGV_VERSION = "0.5.3"        # -- check Makefile and setup.py too
+YAGV_VERSION = "0.5.4"        # -- check Makefile and setup.py too
 
 import pyglet
 import math
@@ -35,6 +35,15 @@ colorMap = {
 	"motion": [ 0.,0.,1. ]
 }
 
+def preg_match(rex,s,m,opts={}):
+	_m = re.search(rex,s)
+	m.clear()
+	if _m:
+		m.append(s)
+		m.extend(_m.groups())
+		return True
+	return False
+                              
 class App:
 	def __init__(self):
 		self.RX = 0.0
@@ -42,7 +51,9 @@ class App:
 		self.PX = 0.0
 		self.PY = 0.0
 		self.zoom = 1.0
+		self.dark = 0
 		self.bed_size = [ 200, 200 ]
+		self.conf = { }
 	
 	def main(self):
 		
@@ -50,9 +61,25 @@ class App:
 		print("Yet Another GCode Viewer v%s"%YAGV_VERSION)
 
 		import sys
-		if len(sys.argv) > 1:
-			path = sys.argv[1]
-		else:
+
+		path = ''
+
+		i = 1
+		while(i<len(sys.argv)):
+			m = [ ]
+			if preg_match('^--(\w+)=(.*)$',sys.argv[i],m):
+				self.conf[m[1]] = m[2]
+			elif preg_match('^--(\w+)$',sys.argv[i],m):
+				self.conf[m[1]] = 1
+			else:
+		 		path = sys.argv[i]
+			i += 1
+
+		if 'dark' in self.conf and self.conf['dark']:
+			colorMap['background'] = [ 0,0,0,1 ]
+			colorMap['text'] = [ 1,1,1, 0.7 ]
+
+		if len(path)==0:
 			# get the real path to the script
 			script_path = os.path.realpath(__file__)
 			# get the containing folder
@@ -376,8 +403,7 @@ class MyWindow(pyglet.window.Window):
       
 		# help
 		self.helpText = [
-						"Ctrl-R: reload",
-						"Left-mouse: rotate | Middle: change layer, Scroll: zoom | Right: panning"]
+						"Left-mouse: rotate | Middle: change layer, Scroll: zoom | Right: panning   Ctrl-R: reload"]
 		for txt in self.helpText:
 			self.blLabels.append(
 				pyglet.text.Label(	txt,
