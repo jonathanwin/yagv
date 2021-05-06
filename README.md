@@ -58,6 +58,7 @@ By default, opens `data/hana_swimsuit_fv_solid_v1.gcode` if no file specified
   * G2 & G3: Arcs 
   
 ## Changes
+* 0.5.4: better parsing arguments, adding `--dark` mode added
 * 0.5.3: better support for Cura, Slic3r, PrusaSlicer and Mandoline distincting perimeter/wall/shell, infill and support extrusion (e.g. `;TYPE:...` Gcode comments); new mouse-button layout to match OpenSCAD
 * 0.5.2: new color scheme (white bg, green extrusion, red active layer), display layer# with z [mm]
 * 0.5.1: `setup.py` with proper pyglet version to match code (pre-2.0), drawing bed grid
