@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-YAGV_VERSION = "0.5.4"        # -- check Makefile and setup.py too
+YAGV_VERSION = "0.5.7"        # -- check Makefile and setup.py too
 
 import pyglet
 import math
@@ -92,12 +92,11 @@ class App:
 			print(self.conf['bed_size'])
 
 		if len(path)==0:
-			# get the real path to the script
 			script_path = os.path.realpath(__file__)
-			# get the containing folder
 			script_dir = os.path.dirname(script_path)
-			# default to hana
 			path = os.path.join(script_dir, "data/hana_swimsuit_fv_solid_v1.gcode")
+			# WTF setuptools: no easy way to access EGG internal data file, we installed it in /usr/local/share/yagv/ instead :-(
+			path = "/usr/local/share/yagv/data/hana_swimsuit_fv_solid_v1.gcode"
 
 		print("Yet Another GCode Viewer v%s"%YAGV_VERSION)
 
@@ -115,6 +114,10 @@ class App:
 		# default to the middle layer
 		self.layerIdx = len(self.model.layers)//2
 		self.window.hud()
+
+		#img = pyglet.resource.image("icon.png")
+		#img = pyglet.image.load("/usr/local/share/yagv/icon.png")
+		#self.window.set_icon(img)
 
 		pyglet.app.run()
 
@@ -171,8 +174,11 @@ class App:
 				layer_vertices.append(x)
 				layer_vertices.append(y)
 				layer_vertices.append(z)
-				
+
 			self.vertices.append(layer_vertices)
+			#layer.end['X'] = layer_vertices[:3]
+			#layer.end['Y'] = layer_vertices[:2]
+			#layer.end['Z'] = layer_vertices[:1]
 			
 		t2 = time.time()
 		print("end renderColors in %0.3f ms" % ((t2-t1)*1000.0, ))
@@ -341,7 +347,12 @@ class App:
 
 	# -- layer select		
 	def layer_update(self):
-		self.window.layerLabel.text = "layer %d (z=%.2f)" % (self.layerIdx,self.model.layers[self.layerIdx].start['Z'])
+		#self.window.layerLabel.text = "layer %d (z=%.2f)" % (self.layerIdx,self.model.layers[self.layerIdx].start['Z'])
+		if self.model.layers[self.layerIdx].bbox.zmin != self.model.layers[self.layerIdx].bbox.zmax:
+			self.window.layerLabel.text = "layer %d (z=%.2f..%.2f)" % (self.layerIdx,self.model.layers[self.layerIdx].bbox.zmin,self.model.layers[self.layerIdx].bbox.zmax)
+		else:
+			self.window.layerLabel.text = "layer %d (z=%.2f)" % (self.layerIdx,self.model.layers[self.layerIdx].start['Z'])
+		#print(self.model.layers[self.layerIdx].bbox.zmin)
 
 	def layer_up(self):
 		self.layerIdx = max(min(self.layerIdx+1, self.model.topLayer), 0)
@@ -440,9 +451,13 @@ class MyWindow(pyglet.window.Window):
 
 		# status
 		## current Layer
-		self.layerLabel = pyglet.text.Label(	"layer %d (z=%.2f)" % (self.app.layerIdx,self.app.model.layers[self.app.layerIdx].start['Z']),
-										font_size=10,color=c_texti,
-										anchor_x='right', anchor_y='top')
+		self.layerLabel = pyglet.text.Label(	"layer %d (z=%.2f)" % (
+			self.app.layerIdx,
+			self.app.model.layers[self.app.layerIdx].start['Z'],
+			#self.app.model.layers[self.app.layerIdx].end['Z']
+			#self.app.model.layers[self.app.layerIdx].bbox.zmin,
+			#self.app.model.layers[self.app.layerIdx].bbox.zmax
+			), font_size=10,color=c_texti,anchor_x='right', anchor_y='top')
 		self.trLabels.append(self.layerLabel)
 
 		# layout the labels in the window's corners

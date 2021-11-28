@@ -3,12 +3,22 @@
 import math
 import re
 
+def preg_match(rex,s,m,opts={}):
+   _m = re.search(rex,s)
+   m.clear()
+   if _m:
+      m.append(s)
+      m.extend(_m.groups())
+      return True
+   return False
+
 class GcodeParser:
 	
 	def __init__(self):
 		self.model = GcodeModel(self)
 		self.current_type = None
 		self.layer_count = None
+		self.layer_current = None
 		
 	def parseFile(self, path):
 		# read the gcode file
@@ -33,21 +43,19 @@ class GcodeParser:
 		command = re.sub("\([^)]*\)", "", self.line)
 		## then semicolons
 		idx = command.find(';')
-		if idx >= 0:                                     # -- any comment to parse?
-			m = re.search(r'TYPE:\s*(\w+)',command)
-			if m:
+		if idx >= 0:                            # -- any comment to parse?
+			m = []
+			if preg_match(r'TYPE:\s*(\w+)',command,m):
 				self.current_type = m[1].lower()
-			else:
-				m = re.search(r'; (skirt|perimeter|infill|support)',command)
-				if m:
-					self.current_type = m[1]
-				else:
-					if not self.layer_count and re.search(r'LAYER_COUNT:',command):
-						self.layer_count = 1
-					m = re.search(r'LAYER:\s*(\d+)',command)      # -- we have actual LAYER: counter! let's use it
-					if m:
-						self.layer_count = 1
-						self.layer_current = int(m[1])
+			elif preg_match(r'; (skirt|perimeter|infill|support)',command,m):
+				self.current_type = m[1]
+			elif not self.layer_count and re.search(r'LAYER_COUNT:',command):
+				self.layer_count = 1
+			elif preg_match(r'LAYER:\s*(\d+)',command,m):   # -- we have actual LAYER: counter! let's use it
+				self.layer_count = 1
+				self.layer_current = int(m[1])
+			#elif preg_match(r'; (\w+):\s*"?(\d+)"?',command,m): 
+			#	self.metadata[m[1]] = m[2]
 			command = command[0:idx].strip()
 		## detect unterminated round bracket comments, just in case
 		idx = command.find('(')
@@ -236,7 +244,7 @@ class GcodeModel:
 		self.isRelative = isRelative
 		
 	def addSegment(self, segment):
-		if self.parser.layer_count:		
+		if self.parser.layer_count:
 			segment.layerIdx = self.parser.layer_current
 		self.segments.append(segment)
 		#print segment
@@ -357,10 +365,13 @@ class GcodeModel:
 			# init distances and extrudate
 			layer.distance = 0
 			layer.extrudate = 0
-			
+			#layer.range = { }
+			#for k in ['X','Y','Z']: layer.range[k] = { }
+			layer.bbox = extend(layer.bbox, coords)
+
 			# include start point
 			self.bbox = extend(self.bbox, coords)
-			
+
 			# for all segments
 			for seg in layer.segments:
 				# calc XYZ distance
@@ -368,7 +379,11 @@ class GcodeModel:
 				d += (seg.coords["Y"]-coords["Y"])**2
 				d += (seg.coords["Z"]-coords["Z"])**2
 				seg.distance = math.sqrt(d)
-				
+
+				#for k in ['X','Y','Z']:
+				#	if layer.range[k].max < coords[k]: layer.range[k].max = coords[k]
+				#	if layer.range[k].min > coords[k]: layer.range[k].min = coords[k]
+
 				# calc extrudate
 				seg.extrudate = (seg.coords["E"]-coords["E"])
 				
@@ -381,7 +396,12 @@ class GcodeModel:
 				
 				# include end point
 				extend(self.bbox, coords)
-			
+
+				if seg.extrudate>0:				  
+					extend(layer.bbox, coords)   # -- layer bbox is only when extruding
+
+			layer.end = coords			
+
 			# accumulate total metrics
 			self.distance += layer.distance
 			self.extrudate += layer.extrudate
@@ -413,7 +433,8 @@ class Layer:
 		self.segments = []
 		self.distance = None
 		self.extrudate = None
-		
+		self.bbox = None
+
 	def __str__(self):
 		return "<Layer: Z=%f, len(segments)=%d, distance=%f, extrudate=%f>"%(self.Z, len(self.segments), self.distance, self.extrudate)
 		

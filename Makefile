@@ -1,5 +1,5 @@
 APPNAME = yagv
-VERSION = 0.5.4
+VERSION = 0.5.6
 # check setup.py and ./yagv too
 
 all::
@@ -7,6 +7,8 @@ all::
 
 install::
 	python3 setup.py install
+	sudo mkdir -p /usr/local/share/yagv;
+	sudo tar cf - icon.png data | (cd /usr/local/share/yagv/; sudo tar xf -)
 	
 deinstall::
 
