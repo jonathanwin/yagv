@@ -1,5 +1,5 @@
 APPNAME = yagv
-VERSION = 0.5.6
+VERSION = 0.5.7
 # check setup.py and ./yagv too
 
 all::
