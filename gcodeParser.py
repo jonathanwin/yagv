@@ -2,6 +2,7 @@
 
 import math
 import re
+import numpy as np
 
 def preg_match(rex,s,m,opts={}):
    _m = re.search(rex,s)
@@ -98,6 +99,14 @@ class GcodeParser:
 		# G1: Controlled move
 		self.model.do_G1(self.parseArgs(args), type+(":"+self.current_type if self.current_type else ''))
 		
+	def parse_G2(self, args, type="G2"):
+		# G2: Arc move
+		self.model.do_G2(self.parseArgs(args), type+(":"+self.current_type if self.current_type else ''))
+
+	def parse_G3(self, args, type="G3"):
+		# G3: Arc move
+		self.model.do_G2(self.parseArgs(args), type+(":"+self.current_type if self.current_type else ''))
+		
 	def parse_G20(self, args):
 		# G20: Set Units to Inches
 		self.error("Unsupported & incompatible: G20: Set Units to Inches")
@@ -174,7 +183,10 @@ class GcodeModel:
 			"Y":0.0,
 			"Z":0.0,
 			"F":0.0,
-			"E":0.0}
+			"E":0.0,
+			"I":0.0,
+			"J":0.0,
+		}
 		# offsets for relative coordinates and position reset (G92)
 		self.offset = {
 			"X":0.0,
@@ -211,14 +223,60 @@ class GcodeModel:
 			"F": coords["F"],	# no feedrate offset
 			"E": self.offset["E"] + coords["E"]
 		}
-		seg = Segment(
-			type,
-			absolute,
-			self.parser.lineNb,
-			self.parser.line)
+		seg = Segment(type, absolute, self.parser.lineNb, self.parser.line)
 		self.addSegment(seg)
 		# update model coords
 		self.relative = coords
+
+	def do_G2(self, args, type):
+		# G2 & G3: Arc move
+		coords = dict(self.relative)           # -- clone previous coords
+		for axis in args.keys():               # -- update changed coords
+			if axis in coords:
+				if self.isRelative:
+					coords[axis] += args[axis]
+				else:
+					coords[axis] = args[axis]
+			else:
+				self.warn("Unknown axis '%s'"%axis)
+		# -- self.relative (current pos), coords (new pos)
+		dir = 1                                    # -- ccw is angle positive
+		if type.find("G2")==0: 
+			dir = -1                                # -- cw is angle negative
+		xp = self.relative["X"] + coords["I"]      # -- center point of arc (static), current pos
+		yp = self.relative["Y"] + coords["J"]
+		es = self.relative["E"]
+		ep = coords["E"] - es
+		as_ = math.atan2(-coords["J"],-coords["I"])      # -- angle start (current pos)
+		ae_ = math.atan2(coords["Y"]-yp,coords["X"]-xp)  # -- angle end (new position)
+		da = math.sqrt(coords["I"]**2 + coords["J"]**2)
+		if dir > 0:
+			if as_ > ae_: as_ -= math.pi*2 
+			al = abs(ae_ - as_) * dir
+		else:    
+			as_ = math.pi*2 + as_ if as_ < 0 else as_
+			al = abs(ae_ - as_) * dir
+		n = int(abs(al)*da/.3)
+		#if coords['Z']<0.4 or coords['Z']==2.3: print(type,dir,n,np.degrees(as_),np.degrees(ae_),al,coords['Z'],"\n",self.relative,"\n",args)
+		if n > 0:		
+			for i in range(1,n+1):
+				f = i/n
+				#print(i,f,n)
+				a = as_ + al*f
+				coords["X"] = xp + math.cos(a) * da
+				coords["Y"] = yp + math.sin(a) * da
+				coords["E"] = es + ep*f
+				absolute = {
+					"X": self.offset["X"] + coords["X"],
+					"Y": self.offset["Y"] + coords["Y"],
+					"Z": self.offset["Z"] + coords["Z"],
+					"F": coords["F"],	# no feedrate offset
+					"E": self.offset["E"] + coords["E"]
+				}
+				seg = Segment(type, absolute, self.parser.lineNb, self.parser.line)
+				self.addSegment(seg)
+				# update model coords
+				self.relative = coords
 		
 	def do_G28(self, args):
 		# G28: Move to Origin
