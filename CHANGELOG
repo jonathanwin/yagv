@@ -1,0 +1,24 @@
+0.5.8:
+  - support added for G2/G3 arc extrusions as used by ArcWelder
+  - CHANGELOG added
+  
+0.5.4: 
+  - adding --help and --dark CLI options
+
+0.5.3:
+  - significant improvement to support non-planar slices
+  - parsing type of extrusion (wall/perimeters, support, infill etc), better support for Cura, Slic3r, PrusaSlicer and Mandoline 
+  - new mouse-button layout to match OpenSCAD
+  - LICENSE added
+
+0.5.2:
+   - new color scheme (white bg, green extrusion, red active layer), display layer# with z [mm]
+
+0.5.1:
+   - `setup.py` with proper pyglet version to match code (pre-2.0), drawing bed grid
+   
+0.5.0: 
+  - Python3 support
+  - proper panning  
+  
+  

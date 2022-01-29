@@ -1,4 +1,4 @@
-# yagv - Yet Another Gcode Viewer, v0.5.4
+# yagv - Yet Another Gcode Viewer, v0.5.8
 
 A fast 3D Gcode Viewer for Reprap-style 3D printers, in Python and OpenGL/pyglet
 
@@ -55,9 +55,10 @@ By default, opens `data/hana_swimsuit_fv_solid_v1.gcode` if no file specified
 * Retract/restore detected but invisible (0-length segments).
 * Some GCodes unsupported, in particular:
   * G20: Set Units to Inches
-  * G2 & G3: Arcs 
+  * ~~G2 & G3: Arcs~~ resolved in 0.5.8
   
 ## Changes
+* 0.5.8: support added for G2/G3 arc extrusions as used by ArcWelder, CHANGELOG added
 * 0.5.4: better parsing arguments, adding `--dark` mode added
 * 0.5.3: better support for Cura, Slic3r, PrusaSlicer and Mandoline distincting perimeter/wall/shell, infill and support extrusion (e.g. `;TYPE:...` Gcode comments); new mouse-button layout to match OpenSCAD
 * 0.5.2: new color scheme (white bg, green extrusion, red active layer), display layer# with z [mm]
