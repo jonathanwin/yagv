@@ -254,9 +254,9 @@ class GcodeModel:
 			if as_ > ae_: as_ -= math.pi*2 
 			al = abs(ae_ - as_) * dir
 		else:    
-			as_ = math.pi*2 + as_ if as_ < 0 else as_
+			if as_ < ae_: as_ += math.pi*2
 			al = abs(ae_ - as_) * dir
-		n = int(abs(al)*da/.3)
+		n = int(abs(al)*da/.5)
 		#if coords['Z']<0.4 or coords['Z']==2.3: print(type,dir,n,np.degrees(as_),np.degrees(ae_),al,coords['Z'],"\n",self.relative,"\n",args)
 		if n > 0:		
 			for i in range(1,n+1):
