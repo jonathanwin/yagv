@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Yet Another Gcode Viewer
+GenericName=Gcode Viewer
+Comment=YAGV display the content of G-Code files using OpenGL.
+Terminal=false
+Exec=yagv %f
+Categories=Education;Development;Science;
+MimeType=text/x.gcode
+NoDisplay=true
+Keywords=3D;Printing;
