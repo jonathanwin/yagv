@@ -2,11 +2,24 @@
 
 import math
 import re
+import numpy as np
+
+def preg_match(rex,s,m,opts={}):
+   _m = re.search(rex,s)
+   m.clear()
+   if _m:
+      m.append(s)
+      m.extend(_m.groups())
+      return True
+   return False
 
 class GcodeParser:
 	
 	def __init__(self):
 		self.model = GcodeModel(self)
+		self.current_type = None
+		self.layer_count = None
+		self.layer_current = None
 		
 	def parseFile(self, path):
 		# read the gcode file
@@ -31,7 +44,19 @@ class GcodeParser:
 		command = re.sub("\([^)]*\)", "", self.line)
 		## then semicolons
 		idx = command.find(';')
-		if idx >= 0:
+		if idx >= 0:                            # -- any comment to parse?
+			m = []
+			if preg_match(r'TYPE:\s*(\w+)',command,m):
+				self.current_type = m[1].lower()
+			elif preg_match(r'; (skirt|perimeter|infill|support)',command,m):
+				self.current_type = m[1]
+			elif not self.layer_count and re.search(r'LAYER_COUNT:',command):
+				self.layer_count = 1
+			elif preg_match(r'LAYER:\s*(\d+)',command,m):   # -- we have actual LAYER: counter! let's use it
+				self.layer_count = 1
+				self.layer_current = int(m[1])
+			#elif preg_match(r'; (\w+):\s*"?(\d+)"?',command,m): 
+			#	self.metadata[m[1]] = m[2]
 			command = command[0:idx].strip()
 		## detect unterminated round bracket comments, just in case
 		idx = command.find('(')
@@ -41,7 +66,7 @@ class GcodeParser:
 		
 		# TODO strip logical line number & checksum
 		
-		# code is fist word, then args
+		# code is first word, then args
 		comm = command.split(None, 1)
 		code = comm[0] if (len(comm)>0) else None
 		args = comm[1] if (len(comm)>1) else None
@@ -72,7 +97,15 @@ class GcodeParser:
 		
 	def parse_G1(self, args, type="G1"):
 		# G1: Controlled move
-		self.model.do_G1(self.parseArgs(args), type)
+		self.model.do_G1(self.parseArgs(args), type+(":"+self.current_type if self.current_type else ''))
+		
+	def parse_G2(self, args, type="G2"):
+		# G2: Arc move
+		self.model.do_G2(self.parseArgs(args), type+(":"+self.current_type if self.current_type else ''))
+
+	def parse_G3(self, args, type="G3"):
+		# G3: Arc move
+		self.model.do_G2(self.parseArgs(args), type+(":"+self.current_type if self.current_type else ''))
 		
 	def parse_G20(self, args):
 		# G20: Set Units to Inches
@@ -100,10 +133,10 @@ class GcodeParser:
 		self.model.do_G92(self.parseArgs(args))
 		
 	def warn(self, msg):
-		print "[WARN] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line)
+		print("[WARN] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line))
 		
 	def error(self, msg):
-		print "[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line)
+		print("[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line))
 		raise Exception("[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line))
 
 class BBox(object):
@@ -150,7 +183,10 @@ class GcodeModel:
 			"Y":0.0,
 			"Z":0.0,
 			"F":0.0,
-			"E":0.0}
+			"E":0.0,
+			"I":0.0,
+			"J":0.0,
+		}
 		# offsets for relative coordinates and position reset (G92)
 		self.offset = {
 			"X":0.0,
@@ -172,7 +208,7 @@ class GcodeModel:
 		coords = dict(self.relative)
 		# update changed coords
 		for axis in args.keys():
-			if coords.has_key(axis):
+			if axis in coords:
 				if self.isRelative:
 					coords[axis] += args[axis]
 				else:
@@ -187,14 +223,60 @@ class GcodeModel:
 			"F": coords["F"],	# no feedrate offset
 			"E": self.offset["E"] + coords["E"]
 		}
-		seg = Segment(
-			type,
-			absolute,
-			self.parser.lineNb,
-			self.parser.line)
+		seg = Segment(type, absolute, self.parser.lineNb, self.parser.line)
 		self.addSegment(seg)
 		# update model coords
 		self.relative = coords
+
+	def do_G2(self, args, type):
+		# G2 & G3: Arc move
+		coords = dict(self.relative)           # -- clone previous coords
+		for axis in args.keys():               # -- update changed coords
+			if axis in coords:
+				if self.isRelative:
+					coords[axis] += args[axis]
+				else:
+					coords[axis] = args[axis]
+			else:
+				self.warn("Unknown axis '%s'"%axis)
+		# -- self.relative (current pos), coords (new pos)
+		dir = 1                                    # -- ccw is angle positive
+		if type.find("G2")==0: 
+			dir = -1                                # -- cw is angle negative
+		xp = self.relative["X"] + coords["I"]      # -- center point of arc (static), current pos
+		yp = self.relative["Y"] + coords["J"]
+		es = self.relative["E"]
+		ep = coords["E"] - es
+		as_ = math.atan2(-coords["J"],-coords["I"])      # -- angle start (current pos)
+		ae_ = math.atan2(coords["Y"]-yp,coords["X"]-xp)  # -- angle end (new position)
+		da = math.sqrt(coords["I"]**2 + coords["J"]**2)
+		if dir > 0:
+			if as_ > ae_: as_ -= math.pi*2 
+			al = abs(ae_ - as_) * dir
+		else:    
+			if as_ < ae_: as_ += math.pi*2
+			al = abs(ae_ - as_) * dir
+		n = int(abs(al)*da/.5)
+		#if coords['Z']<0.4 or coords['Z']==2.3: print(type,dir,n,np.degrees(as_),np.degrees(ae_),al,coords['Z'],"\n",self.relative,"\n",args)
+		if n > 0:		
+			for i in range(1,n+1):
+				f = i/n
+				#print(i,f,n)
+				a = as_ + al*f
+				coords["X"] = xp + math.cos(a) * da
+				coords["Y"] = yp + math.sin(a) * da
+				coords["E"] = es + ep*f
+				absolute = {
+					"X": self.offset["X"] + coords["X"],
+					"Y": self.offset["Y"] + coords["Y"],
+					"Z": self.offset["Z"] + coords["Z"],
+					"F": coords["F"],	# no feedrate offset
+					"E": self.offset["E"] + coords["E"]
+				}
+				seg = Segment(type, absolute, self.parser.lineNb, self.parser.line)
+				self.addSegment(seg)
+				# update model coords
+				self.relative = coords
 		
 	def do_G28(self, args):
 		# G28: Move to Origin
@@ -209,7 +291,7 @@ class GcodeModel:
 			args = {"X":0.0, "Y":0.0, "Z":0.0, "E":0.0}
 		# update specified axes
 		for axis in args.keys():
-			if self.offset.has_key(axis):
+			if axis in self.offset:
 				# transfer value from relative to offset
 				self.offset[axis] += self.relative[axis] - args[axis]
 				self.relative[axis] = args[axis]
@@ -220,6 +302,8 @@ class GcodeModel:
 		self.isRelative = isRelative
 		
 	def addSegment(self, segment):
+		if self.parser.layer_count:
+			segment.layerIdx = self.parser.layer_current
 		self.segments.append(segment)
 		#print segment
 		
@@ -271,8 +355,8 @@ class GcodeModel:
 			
 			# set style and layer in segment
 			seg.style = style
-			seg.layerIdx = currentLayerIdx
-			
+			if not self.parser.layer_count:
+				seg.layerIdx = currentLayerIdx
 			
 			#print coords
 			#print seg.coords
@@ -339,10 +423,13 @@ class GcodeModel:
 			# init distances and extrudate
 			layer.distance = 0
 			layer.extrudate = 0
-			
+			#layer.range = { }
+			#for k in ['X','Y','Z']: layer.range[k] = { }
+			layer.bbox = extend(layer.bbox, coords)
+
 			# include start point
 			self.bbox = extend(self.bbox, coords)
-			
+
 			# for all segments
 			for seg in layer.segments:
 				# calc XYZ distance
@@ -350,7 +437,11 @@ class GcodeModel:
 				d += (seg.coords["Y"]-coords["Y"])**2
 				d += (seg.coords["Z"]-coords["Z"])**2
 				seg.distance = math.sqrt(d)
-				
+
+				#for k in ['X','Y','Z']:
+				#	if layer.range[k].max < coords[k]: layer.range[k].max = coords[k]
+				#	if layer.range[k].min > coords[k]: layer.range[k].min = coords[k]
+
 				# calc extrudate
 				seg.extrudate = (seg.coords["E"]-coords["E"])
 				
@@ -363,7 +454,12 @@ class GcodeModel:
 				
 				# include end point
 				extend(self.bbox, coords)
-			
+
+				if seg.extrudate>0:				  
+					extend(layer.bbox, coords)   # -- layer bbox is only when extruding
+
+			layer.end = coords			
+
 			# accumulate total metrics
 			self.distance += layer.distance
 			self.extrudate += layer.extrudate
@@ -395,7 +491,8 @@ class Layer:
 		self.segments = []
 		self.distance = None
 		self.extrudate = None
-		
+		self.bbox = None
+
 	def __str__(self):
 		return "<Layer: Z=%f, len(segments)=%d, distance=%f, extrudate=%f>"%(self.Z, len(self.segments), self.distance, self.extrudate)
 		
@@ -406,4 +503,4 @@ if __name__ == '__main__':
 	parser = GcodeParser()
 	model = parser.parseFile(path)
 
-	print model
+	print(model)
